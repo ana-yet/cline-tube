@@ -1,0 +1,354 @@
+// ============================================
+// CineTube — Production Prisma Schema
+// PostgreSQL + Prisma ORM
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../backend/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MediaType {
+  MOVIE
+  SERIES
+}
+
+enum PricingType {
+  FREE
+  PREMIUM
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionTier {
+  FREE
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  INCOMPLETE
+  PAST_DUE
+  TRIALING
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum ReportReason {
+  SPAM
+  SPOILER
+  HARASSMENT
+  INAPPROPRIATE
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+// ─────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(uuid())
+  name         String?
+  email        String    @unique
+  passwordHash String?
+  role         Role      @default(USER)
+  emailVerified DateTime?
+  image        String?
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  profile       UserProfile?
+  accounts      Account[]
+  refreshTokens RefreshToken[]
+  resetTokens   PasswordResetToken[]
+  watchlist     Watchlist[]
+  reviews       Review[]
+  reports       ReviewReport[]
+  comments      Comment[]
+  likes         ReviewLike[]
+  subscription  Subscription?
+  transactions  Transaction[]
+}
+
+model UserProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  bio            String?  @db.Text
+  favoriteGenres String[]
+  website        String?
+  twitter        String?
+  facebook       String?
+  github         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Media {
+  id            String      @id @default(uuid())
+  title         String      @db.VarChar(500)
+  slug          String      @unique
+  synopsis      String      @db.Text
+  type          MediaType
+  pricingType   PricingType @default(FREE)
+  streamingLink String
+  posterUrl       String?
+  posterPublicId  String?
+  backdropUrl     String?
+  backdropPublicId String?
+  releaseYear   Int
+  director      String      @db.VarChar(255)
+  cast          String[]
+  averageRating Decimal     @default(0.0) @db.Decimal(3, 1)
+  reviewsCount  Int         @default(0)
+  viewCount     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  genres    MediaGenre[]
+  watchlist Watchlist[]
+  reviews   Review[]
+
+  @@index([slug])
+  @@index([title])
+  @@index([releaseYear])
+  @@index([type])
+  @@index([pricingType])
+  @@index([averageRating])
+  @@index([viewCount])
+  @@index([createdAt])
+}
+
+model Genre {
+  id    String @id @default(uuid())
+  name  String @unique
+
+  media MediaGenre[]
+}
+
+model MediaGenre {
+  mediaId String
+  genreId String
+  createdAt DateTime @default(now())
+
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([mediaId, genreId])
+  @@index([mediaId])
+  @@index([genreId])
+}
+
+model Review {
+  id             String       @id @default(uuid())
+  rating         Int          @db.SmallInt
+  content        String       @db.Text
+  tags           String[]
+  spoilerWarning Boolean      @default(false)
+  status         ReviewStatus @default(PENDING)
+  publishedAt    DateTime?
+  userId         String
+  mediaId        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media   Media          @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    ReviewLike[]
+  reports  ReviewReport[]
+
+  @@unique([userId, mediaId])
+  @@index([userId])
+  @@index([mediaId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ReviewLike {
+  userId    String
+  reviewId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
+  @@index([userId])
+  @@index([reviewId])
+}
+
+model ReviewReport {
+  id        String       @id @default(uuid())
+  reviewId  String
+  userId    String
+  reason    ReportReason
+  details   String?      @db.Text
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  userId    String
+  reviewId  String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  parent Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([userId])
+  @@index([reviewId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+model Watchlist {
+  userId    String
+  mediaId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mediaId])
+  @@index([userId])
+  @@index([mediaId])
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  tier                 SubscriptionTier   @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Transaction {
+  id             String            @id @default(uuid())
+  userId         String
+  subscriptionId String?
+  amount         Decimal           @db.Decimal(10, 2)
+  currency       String            @default("USD") @db.VarChar(3)
+  status         TransactionStatus @default(PENDING)
+  provider       String            @db.VarChar(50)
+  providerTxnId  String            @unique
+  type           String            @default("SUBSCRIPTION") @db.VarChar(50)
+  createdAt      DateTime          @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
