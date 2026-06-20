@@ -3,18 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
-/**
- * Image Upload Component
- *
- * Features:
- * - Drag and drop support
- * - File type validation (JPG, PNG, WebP)
- * - File size validation (max 5MB)
- * - Image preview
- * - Upload progress indication
- * - Remove image
- */
+import { UploadCloud, X, FileImage, AlertTriangle } from "lucide-react";
 
 interface ImageUploadProps {
   currentImageUrl?: string | null;
@@ -64,7 +53,7 @@ export function ImageUpload({
 
       onFileSelect(file);
     },
-    [onFileSelect],
+    [onFileSelect]
   );
 
   const handleDrop = useCallback(
@@ -74,7 +63,7 @@ export function ImageUpload({
       const file = e.dataTransfer.files[0];
       validateAndSetFile(file);
     },
-    [validateAndSetFile],
+    [validateAndSetFile]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,32 +82,31 @@ export function ImageUpload({
   const displayUrl = preview || currentImageUrl;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {displayUrl ? (
-        <div className="relative">
-          <div className="relative w-full max-w-xs overflow-hidden rounded-lg border">
+        <div className="space-y-2.5">
+          <div className="relative w-full max-w-[220px] aspect-[2/3] overflow-hidden rounded-xl border border-zinc-800 shadow-md bg-zinc-950">
             <img
               src={displayUrl}
               alt="Preview"
-              className="h-48 w-full object-cover"
+              className="h-full w-full object-cover"
             />
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute top-2 right-2 bg-red-650/90 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors shadow"
+              title="Remove image"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="mt-2"
-            onClick={handleRemove}
-          >
-            Remove Image
-          </Button>
         </div>
       ) : (
         <div
-          className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors ${
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all ${
             dragOver
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-primary/50"
+              ? "border-red-500 bg-red-500/5"
+              : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/10 hover:bg-zinc-900/30"
           }`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -128,12 +116,14 @@ export function ImageUpload({
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
         >
-          <div className="text-4xl mb-2">📁</div>
-          <p className="text-sm font-medium">
-            Drop an image here or click to browse
+          <div className="h-10 w-10 bg-zinc-900 border border-zinc-850 rounded-xl flex items-center justify-center mb-3">
+            <UploadCloud className="h-5 w-5 text-zinc-550" />
+          </div>
+          <p className="text-xs font-bold text-zinc-300">
+            Drag poster image here or click to browse
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            JPG, PNG, WebP — Max 5MB
+          <p className="text-[10px] text-zinc-550 mt-1 uppercase tracking-wider font-semibold">
+            JPG, PNG, WebP &bull; MAX 5MB
           </p>
         </div>
       )}
@@ -147,8 +137,11 @@ export function ImageUpload({
       />
 
       {(localError || error) && (
-        <Alert variant="destructive">
-          <AlertDescription>{localError || error}</AlertDescription>
+        <Alert variant="destructive" className="border-red-500/20 bg-red-950/20">
+          <AlertDescription className="flex items-center gap-2 text-xs">
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+            <span>{localError || error}</span>
+          </AlertDescription>
         </Alert>
       )}
     </div>

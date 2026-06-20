@@ -3,6 +3,9 @@ import { authRouter } from "./auth.routes";
 import { mediaRouter } from "./media.routes";
 import { reviewRouter } from "./review.routes";
 import { uploadRouter } from "./upload.routes";
+import { watchlistRouter } from "./watchlist.routes";
+import { profileRouter } from "./profile.routes";
+import { adminRouter } from "./admin.routes";
 
 /**
  * API Route Registry
@@ -41,11 +44,13 @@ router.use("/reviews", reviewRouter);
 // ── Upload Routes ─────────────────────────────────────────
 router.use("/upload", uploadRouter);
 
-// ── Placeholder: Route modules will be mounted here ───────
-// router.use("/profile", profileRouter);
-// router.use("/comments", commentRouter);
-// router.use("/watchlist", watchlistRouter);
-// router.use("/payments", paymentRouter);
-// router.use("/admin", adminRouter);
+// ── Watchlist Routes ──────────────────────────────────────
+router.use("/watchlist", watchlistRouter);
+
+// ── Profile Routes ────────────────────────────────────────
+router.use("/profile", profileRouter);
+
+// ── Admin Routes ──────────────────────────────────────────
+router.use("/admin", adminRouter);
 
 export const apiRouter = router;

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -19,16 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/image-upload";
 import { useAuth } from "@/providers/auth-provider";
-
-/**
- * Admin Edit Media Page
- *
- * Pre-filled form to update an existing media entry.
- * Supports replacing the poster image via Cloudinary upload.
- */
+import { Film, AlertCircle } from "lucide-react";
 
 interface GenreOption {
   id: string;
@@ -64,7 +58,7 @@ export default function EditMediaPage() {
     queryFn: async () => {
       const { data } =
         await apiClient.get<ApiResponse<{ genres: GenreOption[] }>>(
-          "/media/genres",
+          "/media/genres"
         );
       return data.data.genres;
     },
@@ -113,7 +107,7 @@ export default function EditMediaPage() {
         synopsis: mediaData.synopsis,
         type: mediaData.type as "MOVIE" | "SERIES",
         pricingType: mediaData.pricingType as "FREE" | "PREMIUM",
-        streamingLink: mediaData.streamingLink,
+        streamingLink: mediaData.streamingLink || "",
         releaseYear: mediaData.releaseYear,
         director: mediaData.director,
         cast: mediaData.cast.join(", "),
@@ -139,8 +133,8 @@ export default function EditMediaPage() {
           data.cast
             .split(",")
             .map((s) => s.trim())
-            .filter(Boolean),
-        ),
+            .filter(Boolean)
+        )
       );
       formData.append("genreIds", JSON.stringify(selectedGenres));
 
@@ -163,7 +157,7 @@ export default function EditMediaPage() {
         response?: { data?: { error?: { message?: string } } };
       };
       setError(
-        apiError.response?.data?.error?.message || "Failed to update media",
+        apiError.response?.data?.error?.message || "Failed to update media"
       );
     },
   });
@@ -172,182 +166,256 @@ export default function EditMediaPage() {
     setSelectedGenres((prev) =>
       prev.includes(genreId)
         ? prev.filter((id) => id !== genreId)
-        : [...prev, genreId],
+        : [...prev, genreId]
     );
   };
 
   const onSubmit = (data: MediaFormData) => {
     setError(null);
+    if (selectedGenres.length === 0) {
+      setError("Select at least one genre parameter");
+      return;
+    }
     updateMutation.mutate(data);
   };
 
   if (authLoading || isLoadingMedia) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
+      <main className="flex items-center justify-center min-h-[70vh] bg-zinc-950">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+      </main>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Edit Media</h1>
-        <Button variant="outline" onClick={() => router.back()}>
+    <div className="space-y-8">
+      {/* Title Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-6">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <Film className="h-6 w-6 text-red-500" />
+            <span>Edit Title Settings</span>
+          </h1>
+          <p className="text-zinc-500 text-xs mt-1">
+            Modify properties, update plot, swap images, or update stream targets for: <span className="font-bold text-zinc-300">{mediaData?.title}</span>
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => router.back()}
+          className="border-zinc-800 hover:bg-zinc-900 text-zinc-300 h-10 rounded-xl"
+        >
           Cancel
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{mediaData?.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {error && (
+          <Alert variant="destructive" className="border-red-500/20 bg-red-950/20">
+            <AlertDescription className="flex items-center gap-2 text-xs">
+              <AlertCircle className="h-4.5 w-4.5 text-red-500" />
+              <span>{error}</span>
+            </AlertDescription>
+          </Alert>
+        )}
 
-            <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
+          {/* Left Column: Parameters & Poster */}
+          <div className="space-y-6">
+            <Card className="bg-zinc-900/30 border-zinc-900 overflow-hidden shadow-lg p-5 space-y-5">
+              <h3 className="font-bold text-xs uppercase text-zinc-500 tracking-wider">Release Parameters</h3>
+              
+              {/* Type Selection */}
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label className="text-xs text-zinc-400 font-semibold">Title Type</Label>
                 <Select
                   value={watch("type")}
-                  onValueChange={(v) =>
-                    setValue("type", v as "MOVIE" | "SERIES")
-                  }
+                  onValueChange={(v) => setValue("type", v as "MOVIE" | "SERIES")}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-zinc-950 border-zinc-850 h-10 text-xs">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-zinc-900 text-white text-xs">
                     <SelectItem value="MOVIE">Movie</SelectItem>
                     <SelectItem value="SERIES">Series</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Pricing Selection */}
               <div className="space-y-2">
-                <Label>Pricing</Label>
+                <Label className="text-xs text-zinc-400 font-semibold">Tier Pricing</Label>
                 <Select
                   value={watch("pricingType")}
-                  onValueChange={(v) =>
-                    setValue("pricingType", v as "FREE" | "PREMIUM")
-                  }
+                  onValueChange={(v) => setValue("pricingType", v as "FREE" | "PREMIUM")}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-zinc-950 border-zinc-850 h-10 text-xs">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FREE">Free</SelectItem>
-                    <SelectItem value="PREMIUM">Premium</SelectItem>
+                  <SelectContent className="bg-zinc-950 border-zinc-900 text-white text-xs">
+                    <SelectItem value="FREE">Free Pass</SelectItem>
+                    <SelectItem value="PREMIUM">Premium CinePass</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                {...register("title", { required: "Title is required" })}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive">
-                  {errors.title.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Synopsis</Label>
-              <Textarea
-                rows={4}
-                {...register("synopsis", { required: "Synopsis is required" })}
-              />
-              {errors.synopsis && (
-                <p className="text-sm text-destructive">
-                  {errors.synopsis.message}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+              {/* Year Selection */}
               <div className="space-y-2">
-                <Label>Director</Label>
-                <Input
-                  {...register("director", {
-                    required: "Director is required",
-                  })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Release Year</Label>
+                <Label className="text-xs text-zinc-400 font-semibold">Release Year</Label>
                 <Input
                   type="number"
-                  {...register("releaseYear", { valueAsNumber: true })}
+                  {...register("releaseYear", {
+                    valueAsNumber: true,
+                    required: "Year is required",
+                  })}
+                  className="bg-zinc-950 border-zinc-850 h-10 text-xs text-white"
+                />
+                {errors.releaseYear && (
+                  <p className="text-[10px] text-red-500">{errors.releaseYear.message}</p>
+                )}
+              </div>
+
+              {/* Poster Image */}
+              <div className="space-y-2.5">
+                <Label className="text-xs text-zinc-400 font-semibold">Poster Artwork</Label>
+                <ImageUpload
+                  currentImageUrl={posterRemoved ? null : currentPosterUrl}
+                  onFileSelect={(file) => {
+                    setImageFile(file);
+                    if (file) setPosterRemoved(false);
+                  }}
+                  onRemove={() => {
+                    setPosterRemoved(true);
+                    setImageFile(null);
+                  }}
                 />
               </div>
-            </div>
+            </Card>
+          </div>
 
-            <div className="space-y-2">
-              <Label>Cast (comma-separated)</Label>
-              <Input {...register("cast")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Streaming Link</Label>
-              <Input {...register("streamingLink", { required: "Required" })} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Poster Image</Label>
-              <ImageUpload
-                currentImageUrl={posterRemoved ? null : currentPosterUrl}
-                onFileSelect={(file) => {
-                  setImageFile(file);
-                  if (file) setPosterRemoved(false);
-                }}
-                onRemove={() => {
-                  setPosterRemoved(true);
-                  setImageFile(null);
-                }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Genres</Label>
-              <div className="flex flex-wrap gap-2">
-                {genresData?.map((genre) => (
-                  <Badge
-                    key={genre.id}
-                    variant={
-                      selectedGenres.includes(genre.id) ? "default" : "outline"
-                    }
-                    className="cursor-pointer"
-                    onClick={() => toggleGenre(genre.id)}
-                  >
-                    {genre.name}
-                  </Badge>
-                ))}
+          {/* Right Column: Descriptions & Details */}
+          <div className="space-y-6">
+            <Card className="bg-zinc-900/30 border-zinc-900 shadow-lg p-6 space-y-6">
+              <h3 className="font-bold text-xs uppercase text-zinc-500 tracking-wider">Descriptive Information</h3>
+              
+              {/* Title */}
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400 font-semibold">Title Name</Label>
+                <Input
+                  placeholder="e.g. Inception"
+                  {...register("title", { required: "Title name is required" })}
+                  className="bg-zinc-950 border-zinc-850 h-11 text-sm text-white"
+                />
+                {errors.title && (
+                  <p className="text-xs text-red-500">{errors.title.message}</p>
+                )}
               </div>
-            </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+              {/* Synopsis */}
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400 font-semibold">Plot Synopsis</Label>
+                <Textarea
+                  rows={5}
+                  placeholder="Provide a compelling overview of the cinematic release..."
+                  {...register("synopsis", { required: "Synopsis plot is required" })}
+                  className="bg-zinc-950 border-zinc-850 text-sm text-white resize-none"
+                />
+                {errors.synopsis && (
+                  <p className="text-xs text-red-500">{errors.synopsis.message}</p>
+                )}
+              </div>
+
+              {/* Director & Cast */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs text-zinc-400 font-semibold">Director</Label>
+                  <Input
+                    placeholder="e.g. Christopher Nolan"
+                    {...register("director", { required: "Director is required" })}
+                    className="bg-zinc-950 border-zinc-850 h-11 text-sm text-white"
+                  />
+                  {errors.director && (
+                    <p className="text-xs text-red-500">{errors.director.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-zinc-400 font-semibold">Cast List (comma-separated)</Label>
+                  <Input
+                    placeholder="e.g. Leonardo DiCaprio, Joseph Gordon-Levitt"
+                    {...register("cast", { required: "Cast is required" })}
+                    className="bg-zinc-950 border-zinc-850 h-11 text-sm text-white"
+                  />
+                  {errors.cast && (
+                    <p className="text-xs text-red-500">{errors.cast.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Streaming Link */}
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400 font-semibold">Streaming Link URL</Label>
+                <Input
+                  placeholder="https://streamingprovider.com/watch/slug"
+                  {...register("streamingLink", { required: "Streaming URL is required" })}
+                  className="bg-zinc-950 border-zinc-850 h-11 text-sm text-white"
+                />
+                {errors.streamingLink && (
+                  <p className="text-xs text-red-500">{errors.streamingLink.message}</p>
+                )}
+              </div>
+
+              {/* Genres Badge selectors */}
+              <div className="space-y-3.5 pt-2">
+                <Label className="text-xs text-zinc-400 font-semibold flex items-center gap-1.5">
+                  <span>Genres Classification</span>
+                  <span className="text-[10px] text-zinc-550 font-normal italic">(select at least one)</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {genresData?.map((genre) => {
+                    const isSelected = selectedGenres.includes(genre.id);
+                    return (
+                      <button
+                        key={genre.id}
+                        type="button"
+                        onClick={() => toggleGenre(genre.id)}
+                        className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${
+                          isSelected
+                            ? "bg-red-500/10 border-red-500/40 text-red-400 font-semibold"
+                            : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700"
+                        }`}
+                      >
+                        {genre.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Separator className="border-zinc-900/60" />
+
+              {/* Submit Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending || selectedGenres.length === 0}
+                  className="bg-red-650 hover:bg-red-700 text-white px-6 h-11 rounded-xl shadow-lg hover:shadow-red-600/10 font-semibold"
+                >
+                  {updateMutation.isPending ? "Saving changes..." : "Save Changes"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  className="border-zinc-800 hover:bg-zinc-900 text-zinc-300 h-11 rounded-xl"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }
