@@ -31,6 +31,8 @@ export async function handleWebhook(
       signature,
     );
 
+    console.log("Webhook Event:", event.type);
+
     await paymentService.handleWebhookEvent(event);
 
     res.json({ received: true });

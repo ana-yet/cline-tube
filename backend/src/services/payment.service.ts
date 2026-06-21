@@ -200,7 +200,16 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       const userId = session.metadata?.userId;
       const plan = session.metadata?.plan;
 
-      if (!userId || !plan) break;
+      console.log("Webhook Event:", event.type);
+      console.log("User:", userId);
+      console.log("Plan:", plan);
+
+      if (!userId || !plan) {
+        console.warn(
+          "checkout.session.completed missing metadata — skipping DB update",
+        );
+        break;
+      }
 
       const subscriptionId = session.subscription as string;
       const stripeSubscription =
@@ -236,6 +245,11 @@ export async function handleWebhookEvent(event: Stripe.Event) {
           },
         }),
       ]);
+
+      console.log(
+        "checkout.session.completed processed — subscription upgraded:",
+        { userId, plan, subscriptionId, periodEnd: periodEnd.toISOString() },
+      );
       break;
     }
 
@@ -251,6 +265,9 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       const userId = stripeSubscription.metadata?.userId;
 
       if (!userId) break;
+
+      console.log("Webhook Event:", event.type);
+      console.log("User:", userId);
 
       const periodStart = new Date(
         stripeSubscription.items.data[0].current_period_start * 1000,
@@ -280,6 +297,12 @@ export async function handleWebhookEvent(event: Stripe.Event) {
           },
         }),
       ]);
+
+      console.log("invoice.paid processed — renewal transaction created:", {
+        userId,
+        invoiceId: invoice.id,
+        periodEnd: periodEnd.toISOString(),
+      });
       break;
     }
 
@@ -296,9 +319,17 @@ export async function handleWebhookEvent(event: Stripe.Event) {
 
       if (!userId) break;
 
+      console.log("Webhook Event:", event.type);
+      console.log("User:", userId);
+
       await prisma.subscription.update({
         where: { userId },
         data: { status: "PAST_DUE" },
+      });
+
+      console.log("invoice.payment_failed processed — status set to PAST_DUE:", {
+        userId,
+        invoiceId: invoice.id,
       });
       break;
     }
