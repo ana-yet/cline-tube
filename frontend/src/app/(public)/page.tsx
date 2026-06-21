@@ -408,38 +408,41 @@ export default function HomePage() {
               Configure parameters, unlock high-definition streams, remove ads, and access custom early review releases.
             </p>
 
-            {/* Custom Sliding Billing Switch */}
-            <div className="inline-flex bg-zinc-900/60 border border-zinc-850 p-1 rounded-full relative items-center justify-center mt-3">
+            {/* Billing period toggle */}
+            <div className="mx-auto mt-4 flex w-full max-w-[320px] rounded-full border border-zinc-800 bg-zinc-900/80 p-1">
               <button
                 type="button"
                 onClick={() => setBillingPeriod("monthly")}
-                className={`text-xs font-semibold px-4.5 py-1.5 rounded-full z-10 transition-all ${
-                  billingPeriod === "monthly" ? "text-white font-bold" : "text-zinc-500 hover:text-zinc-300"
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                  billingPeriod === "monthly"
+                    ? "bg-red-600 text-white shadow-md shadow-red-950/40"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
-                Monthly Plan
+                Monthly
               </button>
               <button
                 type="button"
                 onClick={() => setBillingPeriod("yearly")}
-                className={`text-xs font-semibold px-4.5 py-1.5 rounded-full z-10 transition-all flex items-center gap-1.5 ${
-                  billingPeriod === "yearly" ? "text-white font-bold" : "text-zinc-500 hover:text-zinc-300"
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                  billingPeriod === "yearly"
+                    ? "bg-red-600 text-white shadow-md shadow-red-950/40"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
-                <span>Annual Pass</span>
-                <span className="text-[9px] bg-red-650 text-white px-1.5 py-0.5 rounded-full font-bold">SAVE 17%</span>
+                <span className="inline-flex items-center justify-center gap-1.5">
+                  Annual
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                      billingPeriod === "yearly"
+                        ? "bg-white/20 text-white"
+                        : "bg-emerald-500/15 text-emerald-400"
+                    }`}
+                  >
+                    -17%
+                  </span>
+                </span>
               </button>
-
-              {/* Slider background highlight */}
-              <motion.div
-                className="absolute top-1 bottom-1 bg-red-650 rounded-full"
-                layout
-                transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                style={{
-                  left: billingPeriod === "monthly" ? 4 : "50%",
-                  width: "calc(50% - 6px)",
-                }}
-              />
             </div>
           </div>
 
