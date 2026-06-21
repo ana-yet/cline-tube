@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { ReviewForm } from "@/components/review-form";
 import { ReviewList } from "@/components/review-list";
+import { MyReviewPanel } from "@/components/my-review-panel";
 import {
   Star,
   Play,
@@ -46,7 +47,7 @@ export default function MediaDetailPage({
   const { slug } = use(params);
   const searchParams = useSearchParams();
   const checkoutSuccess = searchParams.get("success") === "true";
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [premiumUnlocked, setPremiumUnlocked] = useState(false);
 
@@ -168,7 +169,26 @@ export default function MediaDetailPage({
   });
 
   const reviews = reviewsData?.data ?? [];
-  const myReview = user ? reviews.find((r) => r.userId === user.id) : null;
+
+  const { data: myReview } = useQuery({
+    queryKey: ["reviews", "mine", slug],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ review: Review | null }>
+      >(`/reviews/media/${slug}/mine`);
+      return data.data.review;
+    },
+    enabled: isAuthenticated && !!media,
+    refetchInterval: (query) => {
+      if (query.state.data?.status === "PENDING") return 5000;
+      return false;
+    },
+  });
+
+  const invalidateMyReview = () => {
+    queryClient.invalidateQueries({ queryKey: ["reviews", "mine", slug] });
+    queryClient.invalidateQueries({ queryKey: ["reviews", "media", slug] });
+  };
 
   useEffect(() => {
     if (checkoutSuccess && isAuthenticated) {
@@ -490,19 +510,22 @@ export default function MediaDetailPage({
                 </h2>
               </div>
 
-              {/* Form to submit review */}
+              {/* Review form or status */}
               {isAuthenticated && !myReview && (
-                <div className="bg-zinc-900/30 border border-zinc-900 rounded-2xl p-6">
-                  <ReviewForm mediaId={media.id} />
+                <div className="rounded-2xl border border-zinc-900 bg-zinc-900/30 p-6">
+                  <ReviewForm
+                    mediaId={media.id}
+                    onSuccess={invalidateMyReview}
+                  />
                 </div>
               )}
 
-              {/* Notification if already reviewed */}
               {isAuthenticated && myReview && (
-                <div className="bg-zinc-900/30 border border-zinc-850 p-4 rounded-xl text-xs text-zinc-400">
-                  You have already shared a review for this title. Review
-                  management options are available in your review post below.
-                </div>
+                <MyReviewPanel
+                  mediaId={media.id}
+                  review={myReview}
+                  onUpdated={invalidateMyReview}
+                />
               )}
 
               {/* Sign in reminder to submit review */}

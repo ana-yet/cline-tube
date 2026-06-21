@@ -75,6 +75,24 @@ export async function getByMedia(
   }
 }
 
+// ── GET /reviews/media/:slug/mine (Authenticated) ───────
+
+export async function getMyReviewForMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const review = await reviewService.getMyReviewForMedia(
+      req.user!.id,
+      req.params.slug,
+    );
+    sendSuccess(res, { review });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // ── GET /reviews/mine (Authenticated) ─────────────────────
 
 export async function getMine(

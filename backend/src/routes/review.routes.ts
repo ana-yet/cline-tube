@@ -40,6 +40,12 @@ router.get(
   reviewController.getByMedia,
 );
 
+router.get(
+  "/media/:slug/mine",
+  authenticate,
+  reviewController.getMyReviewForMedia,
+);
+
 // ── Authenticated Routes ──────────────────────────────────
 
 router.post(

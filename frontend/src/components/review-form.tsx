@@ -78,6 +78,7 @@ export function ReviewForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "mine"] });
       queryClient.invalidateQueries({ queryKey: ["media"] });
       onSuccess?.();
     },

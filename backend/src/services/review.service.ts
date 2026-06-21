@@ -243,6 +243,28 @@ export async function getReviewsByMedia(
   };
 }
 
+// ── Get My Review for Media (Authenticated — any status) ──
+
+export async function getMyReviewForMedia(userId: string, mediaSlug: string) {
+  const media = await prisma.media.findUnique({
+    where: { slug: mediaSlug },
+    select: { id: true },
+  });
+
+  if (!media) {
+    throw new ApiError(404, "Media not found", "MEDIA_NOT_FOUND");
+  }
+
+  const review = await prisma.review.findUnique({
+    where: {
+      userId_mediaId: { userId, mediaId: media.id },
+    },
+    select: reviewSelect,
+  });
+
+  return review;
+}
+
 // ── Get My Reviews ────────────────────────────────────────
 
 export async function getMyReviews(userId: string, query: ReviewQueryInput) {
