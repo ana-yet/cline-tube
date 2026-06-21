@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ReviewForm } from "./review-form";
+import { CommentSection } from "./comment-section";
 
 /**
  * Review List Component
@@ -185,6 +186,8 @@ export function ReviewList({ reviews, mediaId }: ReviewListProps) {
                   </span>
                 ) : null}
               </div>
+
+              <CommentSection reviewId={review.id} />
             </CardContent>
           </Card>
         );
