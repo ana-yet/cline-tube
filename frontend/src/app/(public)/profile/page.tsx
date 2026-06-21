@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
 import type { ApiResponse } from "@/types";
@@ -102,10 +103,13 @@ const ALL_GENRES = [
 
 export default function ProfilePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const checkoutSuccess = searchParams.get("success") === "true";
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [subscriptionActivated, setSubscriptionActivated] = useState(false);
   const [form, setForm] = useState({
     name: "",
     bio: "",
@@ -141,7 +145,30 @@ export default function ProfilePage() {
       return data.data.subscription;
     },
     enabled: isAuthenticated,
+    refetchInterval: (query) => {
+      if (!checkoutSuccess) return false;
+      const tier = query.state.data?.tier;
+      if (tier && tier !== "FREE") return false;
+      return 2000;
+    },
   });
+
+  useEffect(() => {
+    if (checkoutSuccess && isAuthenticated) {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    }
+  }, [checkoutSuccess, isAuthenticated, queryClient]);
+
+  useEffect(() => {
+    if (
+      checkoutSuccess &&
+      subscription?.tier &&
+      subscription.tier !== "FREE"
+    ) {
+      setSubscriptionActivated(true);
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+    }
+  }, [checkoutSuccess, subscription?.tier, queryClient]);
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
@@ -255,6 +282,26 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {subscriptionActivated && (
+        <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
+          <AlertDescription className="flex items-center gap-2">
+            <Check className="h-4 w-4" />
+            <span>
+              Subscription activated! You now have {subscription?.tier} access.
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
+      {checkoutSuccess &&
+        isAuthenticated &&
+        subscription?.tier === "FREE" && (
+          <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
+            <AlertDescription>
+              Payment received. Activating your subscription — this usually
+              takes a few seconds...
+            </AlertDescription>
+          </Alert>
+        )}
       {success && (
         <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
           <AlertDescription className="flex items-center gap-2">
