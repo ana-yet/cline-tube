@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   description:
     "Discover, rate, and review movies and series. Join the CineTube community.",
   keywords: ["movies", "series", "reviews", "ratings", "streaming"],
+  icons: {
+    icon: "/favicon.webp",
+    shortcut: "/favicon.webp",
+    apple: "/favicon.webp",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
