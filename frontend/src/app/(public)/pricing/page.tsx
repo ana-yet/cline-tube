@@ -5,8 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/providers/auth-provider";
-import apiClient, { getAccessToken } from "@/lib/api";
-import { stashAccessTokenBeforeCheckout } from "@/lib/auth-session";
+import apiClient from "@/lib/api";
+import {
+  DEFAULT_CHECKOUT_RETURN_PATH,
+  startStripeCheckout,
+} from "@/lib/checkout";
 import type { ApiResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +48,8 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const checkoutReady = !authLoading && isAuthenticated;
+  const checkoutReturnPath =
+    searchParams.get("return")?.split("?")[0] || DEFAULT_CHECKOUT_RETURN_PATH;
 
   // Handle success/cancel from Stripe redirect
   useEffect(() => {
@@ -79,14 +84,9 @@ export default function PricingPage() {
 
     setLoading(plan);
     try {
-      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
-        "/payments/checkout",
-        { plan },
-      );
-      if (data.data.url) {
-        const token = getAccessToken();
-        if (token) stashAccessTokenBeforeCheckout(token);
-        window.location.href = data.data.url;
+      const url = await startStripeCheckout(plan, checkoutReturnPath);
+      if (url) {
+        window.location.href = url;
       } else {
         setMessage("Checkout failed. Please try again.");
         setLoading(null);

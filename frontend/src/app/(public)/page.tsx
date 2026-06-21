@@ -3,8 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import apiClient, { getAccessToken } from "@/lib/api";
-import { stashAccessTokenBeforeCheckout } from "@/lib/auth-session";
+import apiClient from "@/lib/api";
+import {
+  DEFAULT_CHECKOUT_RETURN_PATH,
+  startStripeCheckout,
+} from "@/lib/checkout";
 import type { ApiResponse, MediaSummary, Media } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -192,14 +195,9 @@ export default function HomePage() {
     const plan = billingPeriod === "monthly" ? "MONTHLY" : "YEARLY";
     setCheckoutLoading(true);
     try {
-      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
-        "/payments/checkout",
-        { plan },
-      );
-      if (data.data.url) {
-        const token = getAccessToken();
-        if (token) stashAccessTokenBeforeCheckout(token);
-        window.location.href = data.data.url;
+      const url = await startStripeCheckout(plan, DEFAULT_CHECKOUT_RETURN_PATH);
+      if (url) {
+        window.location.href = url;
       }
     } catch {
       window.location.href = "/pricing";

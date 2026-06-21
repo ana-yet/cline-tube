@@ -32,6 +32,43 @@ const PLAN_PRICES: Record<
   YEARLY: { amount: 9999, interval: "year" }, // $99.99
 };
 
+const DEFAULT_CHECKOUT_RETURN_PATH = "/profile";
+
+const ALLOWED_RETURN_EXACT = new Set(["/", DEFAULT_CHECKOUT_RETURN_PATH, "/pricing", "/watchlist"]);
+const ALLOWED_RETURN_PREFIXES = ["/browse/"];
+
+function sanitizeReturnPath(returnPath?: string): string {
+  if (!returnPath || typeof returnPath !== "string") {
+    return DEFAULT_CHECKOUT_RETURN_PATH;
+  }
+
+  const path = returnPath.trim().split("?")[0]?.split("#")[0] ?? "";
+
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) {
+    return DEFAULT_CHECKOUT_RETURN_PATH;
+  }
+
+  if (ALLOWED_RETURN_EXACT.has(path)) {
+    return path;
+  }
+
+  if (ALLOWED_RETURN_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return path;
+  }
+
+  return DEFAULT_CHECKOUT_RETURN_PATH;
+}
+
+function buildCheckoutRedirectUrl(
+  returnPath: string | undefined,
+  param: "success" | "canceled",
+): string {
+  const safePath = sanitizeReturnPath(returnPath);
+  const url = new URL(safePath, env.FRONTEND_URL);
+  url.searchParams.set(param, "true");
+  return url.href;
+}
+
 // ── Create or Get Stripe Customer ─────────────────────────
 
 async function getOrCreateStripeCustomer(
@@ -61,6 +98,7 @@ export async function createCheckoutSession(
   userId: string,
   email: string,
   plan: string,
+  returnPath?: string,
 ) {
   const planConfig = PLAN_PRICES[plan];
   if (!planConfig) {
@@ -106,8 +144,8 @@ export async function createCheckoutSession(
         quantity: 1,
       },
     ],
-    success_url: `${env.FRONTEND_URL}/profile?success=true`,
-    cancel_url: `${env.FRONTEND_URL}/pricing?canceled=true`,
+    success_url: buildCheckoutRedirectUrl(returnPath, "success"),
+    cancel_url: buildCheckoutRedirectUrl(returnPath, "canceled"),
     metadata: { userId, plan },
     subscription_data: {
       metadata: { userId, plan },

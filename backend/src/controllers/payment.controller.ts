@@ -15,7 +15,7 @@ export async function checkout(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { plan } = req.body;
+    const { plan, returnPath } = req.body;
 
     if (!plan || !["MONTHLY", "YEARLY"].includes(plan)) {
       throw new ApiError(400, "Plan must be MONTHLY or YEARLY", "INVALID_PLAN");
@@ -25,6 +25,7 @@ export async function checkout(
       req.user!.id,
       req.user!.email,
       plan,
+      typeof returnPath === "string" ? returnPath : undefined,
     );
 
     sendSuccess(res, result);

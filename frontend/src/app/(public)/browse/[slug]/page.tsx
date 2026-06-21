@@ -1,9 +1,11 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
+import { buildPricingHref } from "@/lib/checkout";
 import type {
   ApiResponse,
   Media,
@@ -15,6 +17,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { ReviewForm } from "@/components/review-form";
 import { ReviewList } from "@/components/review-list";
@@ -41,16 +44,44 @@ export default function MediaDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const checkoutSuccess = searchParams.get("success") === "true";
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const [premiumUnlocked, setPremiumUnlocked] = useState(false);
 
-  // 1. Fetch Media details (refetch when auth changes for premium access)
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{
+          subscription: { tier: string; status: string };
+        }>
+      >("/payments/subscription");
+      return data.data.subscription;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: (query) => {
+      if (!checkoutSuccess) return false;
+      const tier = query.state.data?.tier;
+      if (tier && tier !== "FREE") return false;
+      return 2000;
+    },
+  });
+
+  // 1. Fetch Media details (refetch when auth or subscription changes)
   const {
     data: media,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["media", "detail", slug, isAuthenticated],
+    queryKey: [
+      "media",
+      "detail",
+      slug,
+      isAuthenticated,
+      subscription?.tier ?? "FREE",
+    ],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<{ media: MediaDetail }>>(
         `/media/${slug}`,
@@ -138,6 +169,30 @@ export default function MediaDetailPage({
 
   const reviews = reviewsData?.data ?? [];
   const myReview = user ? reviews.find((r) => r.userId === user.id) : null;
+
+  useEffect(() => {
+    if (checkoutSuccess && isAuthenticated) {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    }
+  }, [checkoutSuccess, isAuthenticated, queryClient]);
+
+  useEffect(() => {
+    if (
+      checkoutSuccess &&
+      subscription?.tier &&
+      subscription.tier !== "FREE" &&
+      !media?.accessRestricted
+    ) {
+      setPremiumUnlocked(true);
+      queryClient.invalidateQueries({ queryKey: ["media", "detail", slug] });
+    }
+  }, [
+    checkoutSuccess,
+    subscription?.tier,
+    media?.accessRestricted,
+    queryClient,
+    slug,
+  ]);
 
   // Record view count after 5 seconds of engagement
   useEffect(() => {
@@ -281,6 +336,26 @@ export default function MediaDetailPage({
       </div>
 
       <div className="container mx-auto px-4 mt-8 md:mt-24">
+        {premiumUnlocked && (
+          <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
+            <AlertDescription className="flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              <span>Premium unlocked! You can watch this title now.</span>
+            </AlertDescription>
+          </Alert>
+        )}
+        {checkoutSuccess &&
+          isAuthenticated &&
+          media?.accessRestricted &&
+          subscription?.tier === "FREE" && (
+            <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
+              <AlertDescription>
+                Payment received. Activating premium access — this usually takes
+                a few seconds...
+              </AlertDescription>
+            </Alert>
+          )}
+
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 md:gap-12">
           {/* Left Column: Mobile Poster & CTA buttons */}
           <div className="space-y-4">
@@ -303,7 +378,7 @@ export default function MediaDetailPage({
             <div className="flex flex-col gap-2.5 max-w-[300px] mx-auto md:max-w-none">
               {media.accessRestricted ? (
                 isAuthenticated ? (
-                  <Link href="/pricing" className="w-full">
+                  <Link href={buildPricingHref(`/browse/${slug}`)} className="w-full">
                     <Button
                       size="lg"
                       className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl h-12 text-sm font-semibold"
