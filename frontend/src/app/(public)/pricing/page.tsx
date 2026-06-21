@@ -81,7 +81,14 @@ export default function PricingPage() {
       if (data.data.url) {
         window.location.href = data.data.url;
       }
-    } catch {
+    } catch (err: unknown) {
+      const apiError = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
+      setMessage(
+        apiError.response?.data?.error?.message ||
+          "Checkout failed. Please try again.",
+      );
       setLoading(null);
     }
   };
