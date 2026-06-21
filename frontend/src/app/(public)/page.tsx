@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
@@ -81,10 +81,6 @@ const HERO_CAROUSEL = [
   }
 ];
 
-type HeroSlide = (typeof HERO_CAROUSEL)[number];
-
-type FeaturedMedia = MediaSummary & { backdropUrl: string | null };
-
 const EDITORS_PICKS = [
   {
     id: "pick-1",
@@ -147,42 +143,7 @@ export default function HomePage() {
   // Interactive Trailer Modal state
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
 
-  // Fetch featured titles for the hero carousel
-  const { data: featuredMedia } = useQuery({
-    queryKey: ["hero-featured"],
-    queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<FeaturedMedia[]>>("/media", {
-        params: { sortBy: "top-rated", limit: 5 },
-      });
-      return data.data.filter((item) => item.backdropUrl);
-    },
-  });
-
-  const heroSlides = useMemo<HeroSlide[]>(() => {
-    if (featuredMedia?.length) {
-      return featuredMedia.map((item) => {
-        const meta = HERO_CAROUSEL.find((slide) => slide.slug === item.slug);
-        return {
-          id: item.id,
-          title: item.title,
-          slug: item.slug,
-          rating: Number(item.averageRating).toFixed(1),
-          releaseYear: item.releaseYear,
-          duration:
-            meta?.duration ?? (item.type === "SERIES" ? "Series" : "Feature"),
-          genre: item.genres.map((g) => g.genre.name).join(", "),
-          tagline: meta?.tagline ?? item.title,
-          synopsis:
-            meta?.synopsis ??
-            `Stream, rate, and review ${item.title} on CineTube.`,
-          backdropUrl: item.backdropUrl!,
-          trailerUrl: meta?.trailerUrl ?? "",
-        };
-      });
-    }
-    return HERO_CAROUSEL;
-  }, [featuredMedia]);
-
+  const heroSlides = HERO_CAROUSEL;
   const slideCount = heroSlides.length;
   const currentSlide = heroSlides[activeHero] ?? heroSlides[0];
 
@@ -204,12 +165,6 @@ export default function HomePage() {
 
     return () => clearInterval(timer);
   }, [slideCount]);
-
-  useEffect(() => {
-    if (activeHero >= slideCount && slideCount > 0) {
-      setActiveHero(0);
-    }
-  }, [activeHero, slideCount]);
 
   // Quick Watchlist Toggle mutation for the Quick View card
   const watchlistMutation = useMutation({
