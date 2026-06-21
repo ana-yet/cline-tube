@@ -88,6 +88,8 @@ export const updateMediaSchema = z.object({
     .min(1, "At least one genre is required")
     .max(10)
     .optional(),
+  posterRemoved: z.boolean().optional(),
+  backdropRemoved: z.boolean().optional(),
 });
 
 // Media Query Parameters

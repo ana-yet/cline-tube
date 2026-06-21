@@ -3,6 +3,45 @@ import * as mediaService from "../services/media.service";
 import * as cloudinaryService from "../services/cloudinary.service";
 import { sendSuccess } from "../utils/response";
 
+function getUploadedFiles(req: Request) {
+  const files = req.files as
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+  return {
+    poster: files?.image?.[0],
+    backdrop: files?.backdropImage?.[0],
+  };
+}
+
+async function applyUploadedImages(
+  req: Request,
+  options?: { clearPoster?: boolean; clearBackdrop?: boolean },
+) {
+  const { poster, backdrop } = getUploadedFiles(req);
+
+  if (poster) {
+    const result = await cloudinaryService.uploadImage(poster.buffer);
+    req.body.posterUrl = result.secure_url;
+    req.body.posterPublicId = result.public_id;
+  }
+
+  if (backdrop) {
+    const result = await cloudinaryService.uploadImage(backdrop.buffer);
+    req.body.backdropUrl = result.secure_url;
+    req.body.backdropPublicId = result.public_id;
+  }
+
+  if (options?.clearPoster && !poster) {
+    req.body.posterUrl = null;
+    req.body.posterPublicId = null;
+  }
+
+  if (options?.clearBackdrop && !backdrop) {
+    req.body.backdropUrl = null;
+    req.body.backdropPublicId = null;
+  }
+}
+
 // Media CRUD. When a file is attached it's uploaded to Cloudinary first and
 // the resulting URL + public ID are forwarded to the service layer.
 
@@ -13,11 +52,7 @@ export async function create(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.file) {
-      const result = await cloudinaryService.uploadImage(req.file.buffer);
-      req.body.posterUrl = result.secure_url;
-      req.body.posterPublicId = result.public_id;
-    }
+    await applyUploadedImages(req);
 
     const media = await mediaService.createMedia(req.body);
     sendSuccess(res, { media }, 201);
@@ -33,22 +68,27 @@ export async function update(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.file) {
-      const result = await cloudinaryService.uploadImage(req.file.buffer);
-      req.body.posterUrl = result.secure_url;
-      req.body.posterPublicId = result.public_id;
-    }
+    const existing = await mediaService.getMediaById(req.params.id);
 
-    // Poster cleared without a replacement — remove the existing Cloudinary asset.
-    if (req.body.posterRemoved === true && !req.file) {
-      const existing = await mediaService.getMediaById(req.params.id);
+    await applyUploadedImages(req, {
+      clearPoster: req.body.posterRemoved === true,
+      clearBackdrop: req.body.backdropRemoved === true,
+    });
+
+    if (req.body.posterRemoved === true && !getUploadedFiles(req).poster) {
       if (existing.posterPublicId) {
         cloudinaryService.deleteImage(existing.posterPublicId).catch(() => {});
       }
-      req.body.posterUrl = null;
-      req.body.posterPublicId = null;
     }
+
+    if (req.body.backdropRemoved === true && !getUploadedFiles(req).backdrop) {
+      if (existing.backdropPublicId) {
+        cloudinaryService.deleteImage(existing.backdropPublicId).catch(() => {});
+      }
+    }
+
     delete req.body.posterRemoved;
+    delete req.body.backdropRemoved;
 
     const media = await mediaService.updateMedia(req.params.id, req.body);
     sendSuccess(res, { media });

@@ -33,13 +33,19 @@ const fileFilter = (
   }
 };
 
-export const uploadImage = multer({
+export const uploadMediaImages = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: MAX_FILE_SIZE,
   },
-}).single("image");
+}).fields([
+  { name: "image", maxCount: 1 },
+  { name: "backdropImage", maxCount: 1 },
+]);
+
+/** @deprecated Use uploadMediaImages — kept as alias for existing imports */
+export const uploadImage = uploadMediaImages;
 
 // Multipart sends arrays/objects as JSON strings; parse them back before
 // validation and drop empty strings so optional fields stay undefined.
@@ -68,6 +74,9 @@ export function parseMultipartJsonFields(
 
     if (req.body.posterRemoved === "true") {
       req.body.posterRemoved = true;
+    }
+    if (req.body.backdropRemoved === "true") {
+      req.body.backdropRemoved = true;
     }
   }
   next();

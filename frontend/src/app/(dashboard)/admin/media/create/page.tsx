@@ -47,6 +47,7 @@ export default function CreateMediaPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [backdropFile, setBackdropFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
   const { isAuthenticated } = useAuth();
@@ -99,6 +100,9 @@ export default function CreateMediaPage() {
 
       if (imageFile) {
         formData.append("image", imageFile);
+      }
+      if (backdropFile) {
+        formData.append("backdropImage", backdropFile);
       }
 
       await apiClient.post("/media", formData, {
@@ -228,6 +232,21 @@ export default function CreateMediaPage() {
               <div className="space-y-2.5">
                 <Label className="text-xs text-zinc-400 font-semibold">Poster Artwork</Label>
                 <ImageUpload onFileSelect={setImageFile} error={imageError} />
+              </div>
+
+              {/* Backdrop Image */}
+              <div className="space-y-2.5">
+                <Label className="text-xs text-zinc-400 font-semibold">
+                  Backdrop Image
+                </Label>
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  Wide hero image shown on the movie details page. Recommended
+                  16:9 aspect ratio.
+                </p>
+                <ImageUpload
+                  variant="backdrop"
+                  onFileSelect={setBackdropFile}
+                />
               </div>
             </Card>
           </div>

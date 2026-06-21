@@ -10,6 +10,9 @@ interface ImageUploadProps {
   onFileSelect: (file: File | null) => void;
   onRemove?: () => void;
   error?: string | null;
+  /** Poster (2:3) or wide backdrop (16:9) preview */
+  variant?: "poster" | "backdrop";
+  dropzoneLabel?: string;
 }
 
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -20,6 +23,8 @@ export function ImageUpload({
   onFileSelect,
   onRemove,
   error,
+  variant = "poster",
+  dropzoneLabel,
 }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -80,12 +85,19 @@ export function ImageUpload({
   };
 
   const displayUrl = preview || currentImageUrl;
+  const isBackdrop = variant === "backdrop";
+  const previewClass = isBackdrop
+    ? "relative w-full max-w-md aspect-video overflow-hidden rounded-xl border border-zinc-800 shadow-md bg-zinc-950"
+    : "relative w-full max-w-[220px] aspect-[2/3] overflow-hidden rounded-xl border border-zinc-800 shadow-md bg-zinc-950";
+  const defaultDropLabel = isBackdrop
+    ? "Drag backdrop image here or click to browse"
+    : "Drag poster image here or click to browse";
 
   return (
     <div className="space-y-3">
       {displayUrl ? (
         <div className="space-y-2.5">
-          <div className="relative w-full max-w-[220px] aspect-[2/3] overflow-hidden rounded-xl border border-zinc-800 shadow-md bg-zinc-950">
+          <div className={previewClass}>
             <img
               src={displayUrl}
               alt="Preview"
@@ -120,7 +132,7 @@ export function ImageUpload({
             <UploadCloud className="h-5 w-5 text-zinc-550" />
           </div>
           <p className="text-xs font-bold text-zinc-300">
-            Drag poster image here or click to browse
+            {dropzoneLabel ?? defaultDropLabel}
           </p>
           <p className="text-[10px] text-zinc-550 mt-1 uppercase tracking-wider font-semibold">
             JPG, PNG, WebP &bull; MAX 5MB

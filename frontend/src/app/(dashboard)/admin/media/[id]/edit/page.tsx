@@ -47,8 +47,13 @@ export default function EditMediaPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [backdropFile, setBackdropFile] = useState<File | null>(null);
   const [currentPosterUrl, setCurrentPosterUrl] = useState<string | null>(null);
+  const [currentBackdropUrl, setCurrentBackdropUrl] = useState<string | null>(
+    null,
+  );
   const [posterRemoved, setPosterRemoved] = useState(false);
+  const [backdropRemoved, setBackdropRemoved] = useState(false);
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -114,6 +119,7 @@ export default function EditMediaPage() {
       });
       setSelectedGenres(mediaData.genres.map((g) => g.genre.id));
       setCurrentPosterUrl(mediaData.posterUrl);
+      setCurrentBackdropUrl(mediaData.backdropUrl);
     }
   }, [mediaData, reset]);
 
@@ -141,8 +147,14 @@ export default function EditMediaPage() {
       if (imageFile) {
         formData.append("image", imageFile);
       }
+      if (backdropFile) {
+        formData.append("backdropImage", backdropFile);
+      }
       if (posterRemoved) {
         formData.append("posterRemoved", "true");
+      }
+      if (backdropRemoved) {
+        formData.append("backdropRemoved", "true");
       }
 
       await apiClient.put(`/media/${mediaId}`, formData, {
@@ -287,6 +299,28 @@ export default function EditMediaPage() {
                   onRemove={() => {
                     setPosterRemoved(true);
                     setImageFile(null);
+                  }}
+                />
+              </div>
+
+              {/* Backdrop Image */}
+              <div className="space-y-2.5">
+                <Label className="text-xs text-zinc-400 font-semibold">
+                  Backdrop Image
+                </Label>
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  Wide hero image on the movie details page. Recommended 16:9.
+                </p>
+                <ImageUpload
+                  variant="backdrop"
+                  currentImageUrl={backdropRemoved ? null : currentBackdropUrl}
+                  onFileSelect={(file) => {
+                    setBackdropFile(file);
+                    if (file) setBackdropRemoved(false);
+                  }}
+                  onRemove={() => {
+                    setBackdropRemoved(true);
+                    setBackdropFile(null);
                   }}
                 />
               </div>
