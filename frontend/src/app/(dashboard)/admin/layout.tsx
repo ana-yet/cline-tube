@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Film, LayoutDashboard, Database, ShieldAlert, ArrowLeft, LogOut, Menu, X, ShieldCheck } from "lucide-react";
@@ -15,8 +15,26 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, logout, isLoading, isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!isAuthenticated || user?.role !== "ADMIN") {
+      const redirect = encodeURIComponent(pathname);
+      router.replace(`/login?redirect=${redirect}`);
+    }
+  }, [isLoading, isAuthenticated, user, router, pathname]);
+
+  if (isLoading || !user || user.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+      </div>
+    );
+  }
 
   const sidebarLinks = [
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
