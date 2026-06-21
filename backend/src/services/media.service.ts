@@ -1,4 +1,9 @@
 import prisma from "../config/prisma";
+import {
+  Role,
+  SubscriptionStatus,
+  SubscriptionTier,
+} from "@prisma/client";
 import { ApiError } from "../utils/errors";
 import { deleteImage } from "./cloudinary.service";
 import type {
@@ -220,9 +225,43 @@ export async function deleteMedia(id: string) {
   await prisma.media.delete({ where: { id } });
 }
 
-// ── Get Media by Slug (Public) ────────────────────────────
+// ── Premium access helper ─────────────────────────────────
 
-export async function getMediaBySlug(slug: string) {
+async function userHasPremiumAccess(
+  userId?: string,
+  role?: Role | string,
+): Promise<boolean> {
+  if (role === Role.ADMIN) {
+    return true;
+  }
+
+  if (!userId) {
+    return false;
+  }
+
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId },
+    select: {
+      tier: true,
+      status: true,
+      currentPeriodEnd: true,
+    },
+  });
+
+  return !!(
+    subscription &&
+    subscription.tier !== SubscriptionTier.FREE &&
+    subscription.status === SubscriptionStatus.ACTIVE &&
+    subscription.currentPeriodEnd > new Date()
+  );
+}
+
+// ── Get Media by Slug (Public — premium link gated) ───────
+
+export async function getMediaBySlug(
+  slug: string,
+  viewer?: { id: string; role: Role | string },
+) {
   const media = await prisma.media.findUnique({
     where: { slug },
     select: mediaDetailSelect,
@@ -232,7 +271,61 @@ export async function getMediaBySlug(slug: string) {
     throw new ApiError(404, "Media not found", "MEDIA_NOT_FOUND");
   }
 
-  return media;
+  if (media.pricingType === "PREMIUM") {
+    const hasAccess = await userHasPremiumAccess(viewer?.id, viewer?.role);
+
+    if (!hasAccess) {
+      return {
+        ...media,
+        streamingLink: null,
+        accessRestricted: true as const,
+      };
+    }
+  }
+
+  return {
+    ...media,
+    accessRestricted: false as const,
+  };
+}
+
+// ── Get Stream Link (Authenticated — premium enforced) ────
+
+export async function getStreamLink(
+  slug: string,
+  userId: string,
+  role: Role | string,
+) {
+  const media = await prisma.media.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      title: true,
+      pricingType: true,
+      streamingLink: true,
+    },
+  });
+
+  if (!media || !media.streamingLink) {
+    throw new ApiError(404, "Media not found", "MEDIA_NOT_FOUND");
+  }
+
+  if (media.pricingType === "PREMIUM") {
+    const hasAccess = await userHasPremiumAccess(userId, role);
+
+    if (!hasAccess) {
+      throw new ApiError(
+        403,
+        "Premium subscription required to stream this title",
+        "SUBSCRIPTION_REQUIRED",
+      );
+    }
+  }
+
+  return {
+    streamingLink: media.streamingLink,
+    title: media.title,
+  };
 }
 
 // ── View Count (deduplicated per IP+slug, 1-hour window) ──

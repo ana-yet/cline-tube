@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as mediaController from "../controllers/media.controller";
 import { validate } from "../middlewares/validate";
-import { authenticate } from "../middlewares/auth";
+import { authenticate, optionalAuthenticate } from "../middlewares/auth";
 import { authorize } from "../middlewares/authorize";
 import { uploadImage, parseMultipartJsonFields } from "../middlewares/upload";
 import {
@@ -69,7 +69,13 @@ router.get("/", validate(mediaQuerySchema, "query"), mediaController.list);
 
 router.get("/genres", mediaController.genres);
 
-router.get("/:slug", mediaController.getBySlug);
+router.get(
+  "/:slug/stream",
+  authenticate,
+  mediaController.getStream,
+);
+
+router.get("/:slug", optionalAuthenticate, mediaController.getBySlug);
 
 router.post("/:slug/view", mediaController.recordView);
 

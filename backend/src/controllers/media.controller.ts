@@ -119,10 +119,30 @@ export async function getBySlug(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const media = await mediaService.getMediaBySlug(req.params.slug);
-    // View count NOT incremented here — handled by POST /media/:slug/view
-    // after the frontend confirms 5+ seconds of engagement
+    const viewer = req.user
+      ? { id: req.user.id, role: req.user.role }
+      : undefined;
+    const media = await mediaService.getMediaBySlug(req.params.slug, viewer);
     sendSuccess(res, { media });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ── GET /media/:slug/stream (Authenticated) ───────────────
+
+export async function getStream(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const stream = await mediaService.getStreamLink(
+      req.params.slug,
+      req.user!.id,
+      req.user!.role,
+    );
+    sendSuccess(res, stream);
   } catch (error) {
     next(error);
   }
