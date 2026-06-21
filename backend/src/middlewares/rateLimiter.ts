@@ -1,23 +1,19 @@
 import rateLimit from "express-rate-limit";
+import { env } from "../config/env";
+
+const isDev = env.NODE_ENV === "development";
 
 /**
  * Rate Limiting Configuration
  *
- * Architectural Decision: Two-tier rate limiting strategy:
- *
- * 1. apiLimiter (Global) — 100 requests per 15 minutes per IP
- *    Applied to all /api routes. Prevents general abuse and DDoS.
- *
- * 2. authLimiter (Auth-specific) — 5 requests per 15 minutes per IP
- *    Applied to login/register endpoints. Prevents brute-force attacks.
- *
- * Rate limit headers (RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset)
- * are sent automatically for client-side awareness.
+ * 1. apiLimiter (Global) — skipped in development; 500 req / 15 min in production
+ * 2. authLimiter — login/register only; relaxed in development for local testing
  */
 
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 10_000 : 500,
+  skip: () => isDev,
   message: {
     success: false,
     error: {
@@ -30,8 +26,8 @@ export const apiLimiter = rateLimit({
 });
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 100 : 10,
   message: {
     success: false,
     error: {
