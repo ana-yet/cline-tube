@@ -41,16 +41,16 @@ export default function MediaDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  // 1. Fetch Media details
+  // 1. Fetch Media details (refetch when auth changes for premium access)
   const {
     data: media,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["media", "detail", slug],
+    queryKey: ["media", "detail", slug, isAuthenticated],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<{ media: MediaDetail }>>(
         `/media/${slug}`,
@@ -301,7 +301,28 @@ export default function MediaDetailPage({
 
             {/* Action buttons */}
             <div className="flex flex-col gap-2.5 max-w-[300px] mx-auto md:max-w-none">
-              {media.streamingLink && (
+              {media.accessRestricted ? (
+                isAuthenticated ? (
+                  <Link href="/pricing" className="w-full">
+                    <Button
+                      size="lg"
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl h-12 text-sm font-semibold"
+                    >
+                      Upgrade to Premium
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={`/login?redirect=/browse/${slug}`} className="w-full">
+                    <Button
+                      size="lg"
+                      className="w-full bg-red-650 hover:bg-red-700 text-white rounded-xl h-12 text-sm font-semibold gap-2"
+                    >
+                      <Play className="h-4 w-4 fill-white" />
+                      <span>Sign in to Watch</span>
+                    </Button>
+                  </Link>
+                )
+              ) : media.streamingLink ? (
                 <a
                   href={media.streamingLink}
                   target="_blank"
@@ -316,7 +337,7 @@ export default function MediaDetailPage({
                     <span>Watch Now</span>
                   </Button>
                 </a>
-              )}
+              ) : null}
 
               {isAuthenticated && (
                 <Button
