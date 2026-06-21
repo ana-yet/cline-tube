@@ -1,10 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/providers/auth-provider";
+import apiClient from "@/lib/api";
+import type { ApiResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X, Sparkles, HelpCircle, Film } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Check, X, Sparkles, HelpCircle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -32,8 +39,77 @@ const FAQ_ITEMS = [
 ];
 
 export default function PricingPage() {
+  const { isAuthenticated } = useAuth();
+  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  // Handle success/cancel from Stripe redirect
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      setMessage("Subscription activated! Welcome to premium.");
+    } else if (searchParams.get("canceled") === "true") {
+      setMessage("Checkout canceled. No charges were made.");
+    }
+  }, [searchParams]);
+
+  // Fetch current subscription
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ subscription: { tier: string; status: string } }>
+      >("/payments/subscription");
+      return data.data.subscription;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const currentPlan = subscription?.tier || "FREE";
+
+  const handleCheckout = async (plan: "MONTHLY" | "YEARLY") => {
+    if (!isAuthenticated) {
+      window.location.href = "/register";
+      return;
+    }
+    setLoading(plan);
+    try {
+      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
+        "/payments/checkout",
+        { plan },
+      );
+      if (data.data.url) {
+        window.location.href = data.data.url;
+      }
+    } catch {
+      setLoading(null);
+    }
+  };
   return (
     <div className="min-h-screen bg-zinc-950 text-white pb-20 overflow-hidden">
+      {/* Success/Cancel Message */}
+      {message && (
+        <div className="container mx-auto px-4 pt-6 max-w-3xl relative z-20">
+          <Alert
+            className={
+              searchParams.get("success") === "true"
+                ? "border-emerald-500/50 bg-emerald-500/10"
+                : "border-zinc-700 bg-zinc-900"
+            }
+          >
+            <AlertDescription
+              className={
+                searchParams.get("success") === "true"
+                  ? "text-emerald-400"
+                  : "text-zinc-400"
+              }
+            >
+              {message}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       {/* Background radial highlight */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-red-950/15 rounded-full blur-[120px] pointer-events-none" />
 
@@ -59,6 +135,14 @@ export default function PricingPage() {
           <Card className="bg-zinc-900/60 border-zinc-800/80 rounded-2xl overflow-hidden hover:border-zinc-700/80 transition-all flex flex-col justify-between">
             <CardContent className="pt-8 px-8 text-center flex-1">
               <h3 className="text-lg font-bold text-zinc-300">Free Pass</h3>
+              {currentPlan === "FREE" && (
+                <Badge
+                  variant="outline"
+                  className="mt-2 border-emerald-500 text-emerald-400"
+                >
+                  Current Plan
+                </Badge>
+              )}
               <div className="mt-4 flex items-baseline justify-center text-white">
                 <span className="text-5xl font-extrabold tracking-tight">
                   $0
@@ -108,6 +192,14 @@ export default function PricingPage() {
             </Badge>
             <CardContent className="pt-8 px-8 text-center flex-1">
               <h3 className="text-lg font-bold text-white">CinePass Monthly</h3>
+              {currentPlan === "MONTHLY" && (
+                <Badge
+                  variant="outline"
+                  className="mt-2 border-emerald-500 text-emerald-400"
+                >
+                  Current Plan
+                </Badge>
+              )}
               <div className="mt-4 flex items-baseline justify-center text-white">
                 <span className="text-5xl font-extrabold tracking-tight">
                   $9.99
@@ -140,11 +232,17 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <div className="p-8 pt-0">
-              <Link href="/register" className="block w-full">
-                <Button className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 shadow-lg hover:shadow-red-600/20 transition-all font-semibold">
-                  Subscribe Now
-                </Button>
-              </Link>
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 shadow-lg hover:shadow-red-600/20 transition-all font-semibold"
+                onClick={() => handleCheckout("MONTHLY")}
+                disabled={loading === "MONTHLY" || currentPlan === "MONTHLY"}
+              >
+                {currentPlan === "MONTHLY"
+                  ? "Current Plan"
+                  : loading === "MONTHLY"
+                    ? "Redirecting..."
+                    : "Subscribe Now"}
+              </Button>
             </div>
           </Card>
 
@@ -154,6 +252,14 @@ export default function PricingPage() {
               <h3 className="text-lg font-bold text-zinc-300">
                 CinePass Annual
               </h3>
+              {currentPlan === "YEARLY" && (
+                <Badge
+                  variant="outline"
+                  className="mt-2 border-emerald-500 text-emerald-400"
+                >
+                  Current Plan
+                </Badge>
+              )}
               <div className="mt-4 flex items-baseline justify-center text-white">
                 <span className="text-5xl font-extrabold tracking-tight">
                   $99.99
@@ -187,11 +293,17 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <div className="p-8 pt-0">
-              <Link href="/register" className="block w-full">
-                <Button className="w-full bg-zinc-800 hover:bg-zinc-750 text-white rounded-xl h-11 border border-zinc-700/50">
-                  Subscribe Now
-                </Button>
-              </Link>
+              <Button
+                className="w-full bg-zinc-800 hover:bg-zinc-750 text-white rounded-xl h-11 border border-zinc-700/50"
+                onClick={() => handleCheckout("YEARLY")}
+                disabled={loading === "YEARLY" || currentPlan === "YEARLY"}
+              >
+                {currentPlan === "YEARLY"
+                  ? "Current Plan"
+                  : loading === "YEARLY"
+                    ? "Redirecting..."
+                    : "Subscribe Now"}
+              </Button>
             </div>
           </Card>
         </div>

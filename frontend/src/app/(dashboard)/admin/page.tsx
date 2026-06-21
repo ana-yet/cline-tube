@@ -32,6 +32,10 @@ interface KPIs {
   pendingReviews: number;
   totalWatchlists: number;
   averageRating: number;
+  totalRevenue: number;
+  monthlyRevenue: number;
+  yearlyRevenue: number;
+  activeSubscribers: number;
 }
 
 const KPI_ICONS = {
@@ -41,6 +45,10 @@ const KPI_ICONS = {
   pendingReviews: Clock,
   totalWatchlists: Heart,
   averageRating: Star,
+  totalRevenue: Activity,
+  monthlyRevenue: Activity,
+  yearlyRevenue: Activity,
+  activeSubscribers: ShieldCheck,
 };
 
 const KPI_DETAILS = [
@@ -91,6 +99,30 @@ const KPI_DETAILS = [
     color: "text-yellow-500",
     bg: "bg-yellow-500/10",
     border: "border-yellow-500/15",
+  },
+  {
+    key: "totalRevenue" as const,
+    label: "Total Revenue",
+    description: "All-time earnings",
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/15",
+  },
+  {
+    key: "monthlyRevenue" as const,
+    label: "Monthly Revenue",
+    description: "Current month earnings",
+    color: "text-teal-500",
+    bg: "bg-teal-500/10",
+    border: "border-teal-500/15",
+  },
+  {
+    key: "activeSubscribers" as const,
+    label: "Active Subscribers",
+    description: "Premium plan users",
+    color: "text-red-500",
+    bg: "bg-red-500/10",
+    border: "border-red-500/15",
   },
 ];
 
@@ -155,13 +187,17 @@ export default function AdminDashboardPage() {
             const Icon = KPI_ICONS[detail.key];
             const val = kpis[detail.key];
 
-            // Format rating score nicely
+            // Format values nicely
             const displayVal =
               detail.key === "averageRating"
                 ? typeof val === "number"
                   ? val.toFixed(1)
                   : val
-                : val;
+                : ["totalRevenue", "monthlyRevenue", "yearlyRevenue"].includes(
+                      detail.key,
+                    )
+                  ? `$${Number(val).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+                  : val;
 
             return (
               <Card

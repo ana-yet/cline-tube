@@ -6,6 +6,8 @@ import { uploadRouter } from "./upload.routes";
 import { watchlistRouter } from "./watchlist.routes";
 import { profileRouter } from "./profile.routes";
 import { adminRouter } from "./admin.routes";
+import { paymentRouter } from "./payment.routes";
+import { webhookRouter } from "./webhook.routes";
 
 /**
  * API Route Registry
@@ -52,5 +54,11 @@ router.use("/profile", profileRouter);
 
 // ── Admin Routes ──────────────────────────────────────────
 router.use("/admin", adminRouter);
+
+// ── Payment Routes ────────────────────────────────────────
+router.use("/payments", paymentRouter);
+
+// ── Webhook Routes ────────────────────────────────────────
+router.use("/webhooks", webhookRouter);
 
 export const apiRouter = router;

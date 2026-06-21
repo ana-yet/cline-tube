@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
 import type { ApiResponse, MediaSummary } from "@/types";
+import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -110,6 +112,41 @@ const FAQ_ITEMS = [
 ];
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ subscription: { tier: string; status: string } }>
+      >("/payments/subscription");
+      return data.data.subscription;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const currentPlan = subscription?.tier || "FREE";
+
+  const handleCheckout = async (plan: "MONTHLY" | "YEARLY") => {
+    if (!isAuthenticated) {
+      window.location.href = "/register";
+      return;
+    }
+    setLoading(plan);
+    try {
+      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
+        "/payments/checkout",
+        { plan },
+      );
+      if (data.data.url) {
+        window.location.href = data.data.url;
+      }
+    } catch {
+      setLoading(null);
+    }
+  };
+
   return (
     <main className="min-h-screen">
       <section className="relative h-[70vh] min-h-[500px] flex items-center overflow-hidden">
@@ -173,6 +210,14 @@ export default function HomePage() {
             <Card>
               <CardContent className="pt-6 text-center">
                 <h3 className="text-xl font-bold">Free</h3>
+                {currentPlan === "FREE" && (
+                  <Badge
+                    variant="outline"
+                    className="mt-2 border-emerald-500 text-emerald-400"
+                  >
+                    Current Plan
+                  </Badge>
+                )}
                 <div className="mt-4 text-4xl font-bold">$0</div>
                 <p className="text-muted-foreground">forever</p>
                 <ul className="mt-6 space-y-3 text-sm text-muted-foreground text-left">
@@ -182,8 +227,12 @@ export default function HomePage() {
                   <li>❌ Premium content</li>
                 </ul>
                 <Link href="/register" className="mt-6 block">
-                  <Button className="w-full" variant="outline">
-                    Get Started
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    disabled={currentPlan === "FREE"}
+                  >
+                    {currentPlan === "FREE" ? "Current Plan" : "Get Started"}
                   </Button>
                 </Link>
               </CardContent>
@@ -194,6 +243,14 @@ export default function HomePage() {
               </Badge>
               <CardContent className="pt-6 text-center">
                 <h3 className="text-xl font-bold">Monthly</h3>
+                {currentPlan === "MONTHLY" && (
+                  <Badge
+                    variant="outline"
+                    className="mt-2 border-emerald-500 text-emerald-400"
+                  >
+                    Current Plan
+                  </Badge>
+                )}
                 <div className="mt-4 text-4xl font-bold">$9.99</div>
                 <p className="text-muted-foreground">per month</p>
                 <ul className="mt-6 space-y-3 text-sm text-muted-foreground text-left">
@@ -202,14 +259,30 @@ export default function HomePage() {
                   <li>✅ Ad-free experience</li>
                   <li>✅ Cancel anytime</li>
                 </ul>
-                <Link href="/register" className="mt-6 block">
-                  <Button className="w-full">Subscribe</Button>
-                </Link>
+                <Button
+                  className="w-full mt-6"
+                  onClick={() => handleCheckout("MONTHLY")}
+                  disabled={loading === "MONTHLY" || currentPlan === "MONTHLY"}
+                >
+                  {currentPlan === "MONTHLY"
+                    ? "Current Plan"
+                    : loading === "MONTHLY"
+                      ? "Redirecting..."
+                      : "Subscribe"}
+                </Button>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
                 <h3 className="text-xl font-bold">Yearly</h3>
+                {currentPlan === "YEARLY" && (
+                  <Badge
+                    variant="outline"
+                    className="mt-2 border-emerald-500 text-emerald-400"
+                  >
+                    Current Plan
+                  </Badge>
+                )}
                 <div className="mt-4 text-4xl font-bold">$99.99</div>
                 <p className="text-muted-foreground">
                   per year{" "}
@@ -221,11 +294,18 @@ export default function HomePage() {
                   <li>✅ Early access</li>
                   <li>✅ Best value</li>
                 </ul>
-                <Link href="/register" className="mt-6 block">
-                  <Button className="w-full" variant="outline">
-                    Subscribe
-                  </Button>
-                </Link>
+                <Button
+                  className="w-full mt-6"
+                  variant="outline"
+                  onClick={() => handleCheckout("YEARLY")}
+                  disabled={loading === "YEARLY" || currentPlan === "YEARLY"}
+                >
+                  {currentPlan === "YEARLY"
+                    ? "Current Plan"
+                    : loading === "YEARLY"
+                      ? "Redirecting..."
+                      : "Subscribe"}
+                </Button>
               </CardContent>
             </Card>
           </div>

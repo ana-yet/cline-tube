@@ -1,4 +1,5 @@
 import prisma from "../config/prisma";
+import { getRevenueStats } from "./payment.service";
 
 /**
  * Admin Service — Dashboard KPI Aggregation
@@ -12,6 +13,7 @@ export async function getDashboardKPIs() {
     pendingReviews,
     totalWatchlists,
     avgRating,
+    revenue,
   ] = await Promise.all([
     prisma.user.count({ where: { isDeleted: false } }),
     prisma.media.count(),
@@ -22,6 +24,7 @@ export async function getDashboardKPIs() {
       where: { status: "APPROVED" },
       _avg: { rating: true },
     }),
+    getRevenueStats(),
   ]);
 
   return {
@@ -31,5 +34,6 @@ export async function getDashboardKPIs() {
     pendingReviews,
     totalWatchlists,
     averageRating: Number(avgRating._avg.rating?.toFixed(1) ?? 0),
+    ...revenue,
   };
 }
