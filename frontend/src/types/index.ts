@@ -1,17 +1,3 @@
-/**
- * Shared TypeScript Types
- *
- * Types shared between frontend and backend.
- * Mirrors the Prisma schema enums and API response shapes.
- *
- * Architectural Decision: Types are defined manually here rather than
- * importing from the backend. This keeps frontend and backend decoupled
- * (no cross-package imports) and allows the frontend to define
- * UI-specific types independently.
- */
-
-// ── Enums (mirror Prisma schema) ──────────────────────────
-
 export type Role = "USER" | "ADMIN";
 export type MediaType = "MOVIE" | "SERIES";
 export type PricingType = "FREE" | "PREMIUM";
@@ -88,7 +74,8 @@ export interface Media {
   synopsis: string;
   type: MediaType;
   pricingType: PricingType;
-  streamingLink: string;
+  streamingLink: string | null;
+  accessRestricted?: boolean;
   posterUrl: string | null;
   backdropUrl: string | null;
   releaseYear: number;
