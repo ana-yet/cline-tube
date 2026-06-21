@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
 import { sendSuccess } from "../utils/response";
-import { refreshTokenCookieOptions } from "../services/auth.service";
+import {
+  refreshTokenCookieOptions,
+  clearRefreshTokenCookieOptions,
+} from "../services/auth.service";
 
 /**
  * Auth Controller
@@ -77,12 +80,7 @@ export async function logout(
     await authService.logout(refreshToken);
 
     // Clear the refresh token cookie
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-    });
+    res.clearCookie("refreshToken", clearRefreshTokenCookieOptions);
 
     sendSuccess(res, { message: "Logged out successfully" });
   } catch (error) {
@@ -122,12 +120,7 @@ export async function refresh(
     });
   } catch (error) {
     // On refresh failure, clear the cookie
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-    });
+    res.clearCookie("refreshToken", clearRefreshTokenCookieOptions);
     next(error);
   }
 }

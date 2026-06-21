@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/providers/auth-provider";
-import apiClient from "@/lib/api";
+import apiClient, { getAccessToken } from "@/lib/api";
+import { stashAccessTokenBeforeCheckout } from "@/lib/auth-session";
 import type { ApiResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +84,8 @@ export default function PricingPage() {
         { plan },
       );
       if (data.data.url) {
+        const token = getAccessToken();
+        if (token) stashAccessTokenBeforeCheckout(token);
         window.location.href = data.data.url;
       } else {
         setMessage("Checkout failed. Please try again.");

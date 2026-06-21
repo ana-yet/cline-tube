@@ -20,6 +20,10 @@ import apiClient, {
   registerAuthSyncHandlers,
   setAccessToken as setApiToken,
 } from "@/lib/api";
+import {
+  clearStashedAccessToken,
+  takeStashedAccessToken,
+} from "@/lib/auth-session";
 import { clientEnv } from "@/config/env";
 import { useRouter } from "next/navigation";
 
@@ -61,10 +65,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.data.success && response.data.data.accessToken) {
         setAccessToken(response.data.data.accessToken);
         setUser(response.data.data.user);
-      } else {
-        setAccessToken(null);
+        clearStashedAccessToken();
+        return;
       }
+
+      setAccessToken(null);
     } catch {
+      const stashedToken = takeStashedAccessToken();
+      if (stashedToken) {
+        setAccessToken(stashedToken);
+        try {
+          const { data } = await apiClient.get<{
+            success: boolean;
+            data: { user: User };
+          }>("/auth/me");
+          if (data.success && data.data.user) {
+            setUser(data.data.user);
+            return;
+          }
+        } catch {
+          // Stashed token expired — fall through to logged-out state
+        }
+      }
+
       setAccessToken(null);
     } finally {
       setIsLoading(false);

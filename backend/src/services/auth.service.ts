@@ -33,9 +33,19 @@ const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 export const refreshTokenCookieOptions = {
   httpOnly: true,
   secure: env.NODE_ENV === "production",
-  sameSite: "strict" as const,
+  // Cross-origin frontend (Vercel) + API (Render) requires SameSite=None.
+  sameSite: (env.NODE_ENV === "production" ? "none" : "strict") as
+    | "strict"
+    | "none",
   maxAge: REFRESH_TOKEN_EXPIRY_MS,
   path: "/",
+};
+
+export const clearRefreshTokenCookieOptions = {
+  httpOnly: refreshTokenCookieOptions.httpOnly,
+  secure: refreshTokenCookieOptions.secure,
+  sameSite: refreshTokenCookieOptions.sameSite,
+  path: refreshTokenCookieOptions.path,
 };
 
 // ── Helper: Build safe user object ────────────────────────

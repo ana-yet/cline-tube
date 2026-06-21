@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import apiClient from "@/lib/api";
+import apiClient, { getAccessToken } from "@/lib/api";
+import { stashAccessTokenBeforeCheckout } from "@/lib/auth-session";
 import type { ApiResponse, MediaSummary, Media } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -196,6 +197,8 @@ export default function HomePage() {
         { plan },
       );
       if (data.data.url) {
+        const token = getAccessToken();
+        if (token) stashAccessTokenBeforeCheckout(token);
         window.location.href = data.data.url;
       }
     } catch {

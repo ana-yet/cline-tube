@@ -228,7 +228,7 @@ export default function ProfilePage() {
     );
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <main className="container mx-auto px-4 py-16 text-center min-h-[70vh] flex items-center justify-center bg-zinc-950">
         <div className="h-9 w-9 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
@@ -237,6 +237,28 @@ export default function ProfilePage() {
   }
 
   if (!isAuthenticated || !profile) {
+    if (checkoutSuccess) {
+      return (
+        <main className="container mx-auto px-4 py-24 text-center min-h-[70vh] flex flex-col items-center justify-center space-y-6 bg-zinc-950">
+          <div className="h-16 w-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center">
+            <Check className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">
+            Payment successful
+          </h1>
+          <p className="text-zinc-500 max-w-sm">
+            Your subscription is being activated. Sign in to view your updated
+            account and premium access.
+          </p>
+          <Link href="/login?redirect=%2Fprofile%3Fsuccess%3Dtrue">
+            <Button className="bg-red-600 hover:bg-red-700 text-white px-6">
+              Sign in to view profile
+            </Button>
+          </Link>
+        </main>
+      );
+    }
+
     return (
       <main className="container mx-auto px-4 py-24 text-center min-h-[70vh] flex flex-col items-center justify-center space-y-6 bg-zinc-950">
         <div className="h-16 w-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-center">
