@@ -147,8 +147,8 @@ export async function updateReview(
     select: reviewSelect,
   });
 
-  // If rating changed and was previously approved, recalculate media rating
-  if (input.rating !== undefined && review.status === "APPROVED") {
+  // Re-approval required; drop stale rating if this review was public
+  if (review.status === "APPROVED") {
     await recalculateMediaRating(prisma, review.mediaId);
   }
 
