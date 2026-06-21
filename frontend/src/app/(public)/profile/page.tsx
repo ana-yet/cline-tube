@@ -30,6 +30,13 @@ import {
   Check,
   AlertCircle,
   Edit3,
+  Sparkles,
+  Crown,
+  Bookmark,
+  Star,
+  ExternalLink,
+  ChevronRight,
+  Film,
 } from "lucide-react";
 
 // Inline social SVG icons — lucide-react no longer ships social media icons
@@ -228,6 +235,35 @@ export default function ProfilePage() {
     );
   };
 
+  const isPremium =
+    subscription?.tier === "MONTHLY" || subscription?.tier === "YEARLY";
+  const displayName = profile?.name || "Anonymous User";
+  const initials = profile?.name
+    ? profile.name.slice(0, 2).toUpperCase()
+    : "US";
+  const joinedDate = profile
+    ? new Date(profile.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      })
+    : "";
+  const genreCount = profile?.profile?.favoriteGenres?.length ?? 0;
+  const profileCompletion = profile
+    ? Math.round(
+        ([
+          !!profile.name,
+          !!profile.profile?.bio,
+          genreCount > 0,
+          !!profile.profile?.website ||
+            !!profile.profile?.twitter ||
+            !!profile.profile?.github ||
+            !!profile.profile?.facebook,
+        ].filter(Boolean).length /
+          4) *
+          100,
+      )
+    : 0;
+
   if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <main className="container mx-auto px-4 py-16 text-center min-h-[70vh] flex items-center justify-center bg-zinc-950">
@@ -281,561 +317,691 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-12 max-w-6xl min-h-[80vh] bg-zinc-950">
-      {/* Title */}
-      <div className="mb-10 border-b border-zinc-900 pb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
-            Account Settings
-          </h1>
-          <p className="text-zinc-500 text-sm mt-1">
-            Manage your public movie profile, preferences, and linked social
-            media channels.
-          </p>
-        </div>
-        {!editing && (
-          <Button
-            onClick={startEditing}
-            className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 gap-1.5 h-10 px-4"
-          >
-            <Edit3 className="h-4 w-4" />
-            <span>Edit Profile</span>
-          </Button>
-        )}
-      </div>
+    <main className="min-h-screen bg-zinc-950 pb-16">
+      {/* Profile hero */}
+      <section className="relative border-b border-zinc-900 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-950/80 via-zinc-950 to-amber-950/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-600/10 via-transparent to-transparent" />
+        <div className="container relative mx-auto max-w-6xl px-4 pb-8 pt-10 md:pt-14">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-end">
+              <div className="relative shrink-0">
+                {profile.image ? (
+                  <img
+                    src={profile.image}
+                    alt={displayName}
+                    className="h-24 w-24 rounded-2xl object-cover ring-4 ring-zinc-950 shadow-2xl md:h-28 md:w-28"
+                  />
+                ) : (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 text-2xl font-bold text-white ring-4 ring-zinc-950 shadow-2xl md:h-28 md:w-28 md:text-3xl">
+                    {initials}
+                  </div>
+                )}
+                {isPremium && (
+                  <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-950 bg-amber-500 text-zinc-950 shadow-lg">
+                    <Crown className="h-4 w-4" />
+                  </span>
+                )}
+              </div>
 
-      {subscriptionActivated && (
-        <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
-          <AlertDescription className="flex items-center gap-2">
-            <Check className="h-4 w-4" />
-            <span>
-              Subscription activated! You now have {subscription?.tier} access.
-            </span>
-          </AlertDescription>
-        </Alert>
-      )}
-      {checkoutSuccess &&
-        isAuthenticated &&
-        subscription?.tier === "FREE" && (
-          <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
-            <AlertDescription>
-              Payment received. Activating your subscription — this usually
-              takes a few seconds...
+              <div className="space-y-3 text-center sm:text-left">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                  <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+                    {displayName}
+                  </h1>
+                  <Badge
+                    variant="outline"
+                    className="border-red-500/30 bg-red-500/10 text-red-400 text-[10px] uppercase tracking-wider"
+                  >
+                    <Shield className="mr-1 h-3 w-3" />
+                    {profile.role}
+                  </Badge>
+                  {isPremium && (
+                    <Badge className="border-amber-500/30 bg-amber-500/15 text-amber-300 text-[10px] uppercase tracking-wider">
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      CinePass
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-zinc-400 sm:justify-start">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-zinc-600" />
+                    {profile.email}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-zinc-600" />
+                    Member since {joinedDate}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {!editing && (
+              <Button
+                onClick={startEditing}
+                className="h-11 shrink-0 gap-2 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-5 text-zinc-100 backdrop-blur hover:bg-zinc-800"
+              >
+                <Edit3 className="h-4 w-4" />
+                Edit Profile
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        {subscriptionActivated && (
+          <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
+            <AlertDescription className="flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              <span>
+                Subscription activated! You now have {subscription?.tier} access.
+              </span>
             </AlertDescription>
           </Alert>
         )}
-      {success && (
-        <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
-          <AlertDescription className="flex items-center gap-2">
-            <Check className="h-4 w-4" />
-            <span>Your settings have been saved successfully!</span>
-          </AlertDescription>
-        </Alert>
-      )}
-      {error && (
-        <Alert
-          variant="destructive"
-          className="mb-6 border-red-500/20 bg-red-950/20"
-        >
-          <AlertDescription className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            <span>{error}</span>
-          </AlertDescription>
-        </Alert>
-      )}
+        {checkoutSuccess &&
+          isAuthenticated &&
+          subscription?.tier === "FREE" && (
+            <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
+              <AlertDescription>
+                Payment received. Activating your subscription — this usually
+                takes a few seconds...
+              </AlertDescription>
+            </Alert>
+          )}
+        {success && (
+          <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
+            <AlertDescription className="flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              <span>Your settings have been saved successfully!</span>
+            </AlertDescription>
+          </Alert>
+        )}
+        {error && (
+          <Alert
+            variant="destructive"
+            className="mb-6 border-red-500/20 bg-red-950/20"
+          >
+            <AlertDescription className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>{error}</span>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
-        {/* Left column: Summary Card */}
-        <div className="space-y-6">
-          <Card className="bg-zinc-900/40 border-zinc-900 overflow-hidden shadow-lg">
-            <div className="h-24 bg-gradient-to-r from-red-900/60 to-amber-800/40 relative" />
-            <CardContent className="p-6 relative text-center -mt-12 space-y-4">
-              {/* Profile Avatar */}
-              <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-red-600 to-amber-500 mx-auto flex items-center justify-center text-white text-2xl font-bold ring-4 ring-zinc-900 shadow-md">
-                {profile.name ? profile.name.slice(0, 2).toUpperCase() : "US"}
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="font-bold text-lg text-white truncate">
-                  {profile.name || "Anonymous User"}
-                </h3>
-                <span className="inline-flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  <Shield className="h-3 w-3" />
-                  {profile.role}
-                </span>
-              </div>
-
-              {/* Stats blocks */}
-              <div className="grid grid-cols-3 gap-2 border-y border-zinc-900 py-4 mt-2">
-                <div className="text-center">
-                  <p className="text-2xl font-extrabold text-white">
-                    {profile._count.reviews}
-                  </p>
-                  <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
-                    Reviews
-                  </p>
-                </div>
-                <div className="text-center">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_1fr]">
+          {/* Sidebar */}
+          <aside className="space-y-5">
+            {/* Activity stats */}
+            <Card className="overflow-hidden border-zinc-800/80 bg-zinc-900/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+                  Your Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-3 pb-5">
+                <Link
+                  href="/watchlist"
+                  className="group rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 transition-colors hover:border-red-500/30 hover:bg-red-500/5"
+                >
+                  <Bookmark className="mb-2 h-4 w-4 text-red-400" />
                   <p className="text-2xl font-extrabold text-white">
                     {profile._count.watchlist}
                   </p>
-                  <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-400">
                     Watchlist
                   </p>
-                </div>
-                <div className="text-center">
+                </Link>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
+                  <Star className="mb-2 h-4 w-4 text-amber-400" />
                   <p className="text-2xl font-extrabold text-white">
-                    {subscription?.tier || "FREE"}
+                    {profile._count.reviews}
                   </p>
-                  <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
-                    Plan
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                    Reviews
                   </p>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* User meta list */}
-              <div className="space-y-2.5 text-xs text-zinc-500 text-left pt-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-zinc-600" />
-                  <span className="truncate text-zinc-400">
-                    {profile.email}
+            {/* Profile completion */}
+            {!editing && profileCompletion < 100 && (
+              <Card className="border-zinc-800/80 bg-zinc-900/50 p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Profile strength
+                  </span>
+                  <span className="text-sm font-bold text-red-400">
+                    {profileCompletion}%
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-zinc-600" />
-                  <span className="text-zinc-400">
-                    Joined{" "}
-                    {new Date(profile.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                    })}
-                  </span>
+                <div className="mb-3 h-2 overflow-hidden rounded-full bg-zinc-800">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-red-600 to-amber-500 transition-all"
+                    style={{ width: `${profileCompletion}%` }}
+                  />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Social connections overview */}
-          {!editing &&
-            (profile.profile?.website ||
-              profile.profile?.twitter ||
-              profile.profile?.github ||
-              profile.profile?.facebook) && (
-              <Card className="bg-zinc-900/40 border-zinc-900 p-6 space-y-4">
-                <h4 className="font-bold text-xs uppercase text-zinc-500 tracking-wider">
-                  Social Channels
-                </h4>
-                <div className="space-y-3 text-xs">
-                  {profile.profile.website && (
-                    <a
-                      href={profile.profile.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2.5 text-zinc-400 hover:text-white transition-colors"
-                    >
-                      <LinkIcon className="h-4 w-4 text-zinc-600" />
-                      <span className="truncate">
-                        {profile.profile.website.replace(/^https?:\/\//, "")}
-                      </span>
-                    </a>
-                  )}
-                  {profile.profile.twitter && (
-                    <div className="flex items-center gap-2.5 text-zinc-400">
-                      <TwitterIcon className="h-4 w-4 text-zinc-600" />
-                      <span>@{profile.profile.twitter.replace(/^@/, "")}</span>
-                    </div>
-                  )}
-                  {profile.profile.github && (
-                    <div className="flex items-center gap-2.5 text-zinc-400">
-                      <GithubIcon className="h-4 w-4 text-zinc-600" />
-                      <span>{profile.profile.github}</span>
-                    </div>
-                  )}
-                  {profile.profile.facebook && (
-                    <div className="flex items-center gap-2.5 text-zinc-400">
-                      <FacebookIcon className="h-4 w-4 text-zinc-600" />
-                      <span className="truncate">
-                        {profile.profile.facebook}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <p className="text-xs leading-relaxed text-zinc-500">
+                  Add a bio, favorite genres, or social links to complete your
+                  public profile.
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={startEditing}
+                  className="mt-3 h-8 px-0 text-red-400 hover:bg-transparent hover:text-red-300"
+                >
+                  Complete profile
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </Card>
             )}
-        </div>
 
-        {/* Subscription Card */}
-        {subscription && (
-          <Card className="bg-zinc-900/40 border-zinc-900 p-6 space-y-4">
-            <h4 className="font-bold text-xs uppercase text-zinc-500 tracking-wider">
-              Subscription
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-400 text-sm">Current Plan</span>
-                <Badge
-                  variant={subscription.tier === "FREE" ? "outline" : "default"}
-                >
-                  {subscription.tier}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-400 text-sm">Status</span>
-                <span className="text-sm text-emerald-400">
-                  {subscription.status}
-                </span>
-              </div>
-              {subscription.tier !== "FREE" && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400 text-sm">Renews</span>
-                    <span className="text-sm text-zinc-300">
-                      {new Date(
-                        subscription.currentPeriodEnd,
-                      ).toLocaleDateString()}
+            {/* Subscription */}
+            {subscription && (
+              <Card
+                className={`overflow-hidden border-zinc-800/80 ${
+                  isPremium
+                    ? "bg-gradient-to-br from-amber-950/30 via-zinc-900/60 to-red-950/20"
+                    : "bg-zinc-900/50"
+                }`}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500">
+                    {isPremium ? (
+                      <Crown className="h-4 w-4 text-amber-400" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 text-zinc-500" />
+                    )}
+                    CinePass
+                  </CardTitle>
+                  <CardDescription className="text-zinc-400">
+                    {isPremium
+                      ? "Premium streaming and catalog access"
+                      : "Upgrade for premium titles and ad-free browsing"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between rounded-lg border border-zinc-800/80 bg-zinc-950/50 px-3 py-2.5">
+                    <span className="text-sm text-zinc-400">Plan</span>
+                    <Badge
+                      className={
+                        isPremium
+                          ? "border-amber-500/30 bg-amber-500/15 text-amber-300"
+                          : "border-zinc-700 bg-zinc-800 text-zinc-300"
+                      }
+                    >
+                      {subscription.tier}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-400">Status</span>
+                    <span
+                      className={
+                        subscription.status === "ACTIVE"
+                          ? "font-medium text-emerald-400"
+                          : "text-zinc-300"
+                      }
+                    >
+                      {subscription.status}
                     </span>
                   </div>
-                  {subscription.status !== "CANCELED" && (
+                  {isPremium && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-400">Renews</span>
+                      <span className="text-zinc-200">
+                        {new Date(
+                          subscription.currentPeriodEnd,
+                        ).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {subscription.tier === "FREE" ? (
+                    <Link href="/pricing">
+                      <Button className="h-10 w-full rounded-xl bg-red-600 hover:bg-red-700">
+                        Upgrade to Premium
+                      </Button>
+                    </Link>
+                  ) : subscription.status !== "CANCELED" ? (
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
-                      className="w-full"
+                      className="h-10 w-full rounded-xl border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                       onClick={() => cancelMutation.mutate()}
                       disabled={cancelMutation.isPending}
                     >
                       {cancelMutation.isPending
                         ? "Canceling..."
-                        : "Cancel Subscription"}
+                        : "Cancel subscription"}
                     </Button>
-                  )}
-                </>
-              )}
-              {subscription.tier === "FREE" && (
-                <Link href="/pricing">
-                  <Button
-                    size="sm"
-                    className="w-full bg-red-600 hover:bg-red-700"
-                  >
-                    Upgrade Plan
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </Card>
-        )}
+                  ) : null}
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Right column: Edit/View forms */}
-        <div className="space-y-6">
-          {editing ? (
-            <Card className="bg-zinc-900/30 border-zinc-900 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-white">
-                  Edit Profile Details
-                </CardTitle>
-                <CardDescription className="text-zinc-500 text-xs">
-                  Modify your personal details and favorite movie genres.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Basic info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Quick links */}
+            <Card className="border-zinc-800/80 bg-zinc-900/50 p-2">
+              <nav className="flex flex-col">
+                {[
+                  { href: "/browse", label: "Browse catalog", icon: Film },
+                  { href: "/watchlist", label: "My watchlist", icon: Bookmark },
+                  { href: "/pricing", label: "Plans & pricing", icon: Sparkles },
+                ].map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-zinc-400 transition-colors hover:bg-zinc-800/60 hover:text-white"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon className="h-4 w-4 text-zinc-600" />
+                      {label}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-zinc-700" />
+                  </Link>
+                ))}
+              </nav>
+            </Card>
+
+            {/* Social sidebar */}
+            {!editing &&
+              (profile.profile?.website ||
+                profile.profile?.twitter ||
+                profile.profile?.github ||
+                profile.profile?.facebook) && (
+                <Card className="border-zinc-800/80 bg-zinc-900/50 p-5">
+                  <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Connected
+                  </h4>
+                  <div className="space-y-3">
+                    {profile.profile.website && (
+                      <a
+                        href={profile.profile.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
+                      >
+                        <LinkIcon className="h-4 w-4 shrink-0 text-zinc-600" />
+                        <span className="truncate">
+                          {profile.profile.website.replace(/^https?:\/\//, "")}
+                        </span>
+                        <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
+                      </a>
+                    )}
+                    {profile.profile.twitter && (
+                      <div className="flex items-center gap-2.5 text-sm text-zinc-400">
+                        <TwitterIcon className="h-4 w-4 shrink-0 text-zinc-600" />
+                        @{profile.profile.twitter.replace(/^@/, "")}
+                      </div>
+                    )}
+                    {profile.profile.github && (
+                      <div className="flex items-center gap-2.5 text-sm text-zinc-400">
+                        <GithubIcon className="h-4 w-4 shrink-0 text-zinc-600" />
+                        {profile.profile.github}
+                      </div>
+                    )}
+                    {profile.profile.facebook && (
+                      <div className="flex items-center gap-2.5 text-sm text-zinc-400">
+                        <FacebookIcon className="h-4 w-4 shrink-0 text-zinc-600" />
+                        <span className="truncate">
+                          {profile.profile.facebook}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+          </aside>
+
+          {/* Main content */}
+          <div className="space-y-6">
+            {editing ? (
+              <Card className="border-zinc-800/80 bg-zinc-900/40 shadow-xl">
+                <CardHeader className="border-b border-zinc-800/60">
+                  <CardTitle className="text-lg font-bold text-white">
+                    Edit profile
+                  </CardTitle>
+                  <CardDescription className="text-zinc-500">
+                    Update how you appear across CineTube.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8 pt-6">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="edit-name"
+                        className="text-xs font-semibold text-zinc-400"
+                      >
+                        Display name
+                      </Label>
+                      <Input
+                        id="edit-name"
+                        value={form.name}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, name: e.target.value }))
+                        }
+                        className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-zinc-400">
+                        Email
+                      </Label>
+                      <Input
+                        value={profile.email}
+                        disabled
+                        className="h-11 cursor-not-allowed border-zinc-800 bg-zinc-900 text-zinc-500"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label
-                      htmlFor="edit-name"
-                      className="text-zinc-400 text-xs font-semibold"
+                      htmlFor="edit-bio"
+                      className="text-xs font-semibold text-zinc-400"
                     >
-                      Display Name
+                      Bio
                     </Label>
-                    <Input
-                      id="edit-name"
-                      value={form.name}
+                    <Textarea
+                      id="edit-bio"
+                      value={form.bio}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, name: e.target.value }))
+                        setForm((f) => ({ ...f, bio: e.target.value }))
                       }
-                      className="bg-zinc-950 border-zinc-800 text-white h-11"
+                      rows={4}
+                      placeholder="Share your favorite directors, genres, or what you're watching..."
+                      className="resize-none border-zinc-800 bg-zinc-950 text-white"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-zinc-400 text-xs font-semibold">
-                      Email Address
+
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold text-zinc-400">
+                      Favorite genres
                     </Label>
-                    <Input
-                      value={profile.email}
-                      disabled
-                      className="bg-zinc-900 border-zinc-800 text-zinc-500 h-11 cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edit-bio"
-                    className="text-zinc-400 text-xs font-semibold"
-                  >
-                    Short Bio
-                  </Label>
-                  <Textarea
-                    id="edit-bio"
-                    value={form.bio}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, bio: e.target.value }))
-                    }
-                    rows={4}
-                    placeholder="Tell other movie buffs about yourself, your favorite directors, etc..."
-                    className="bg-zinc-950 border-zinc-800 text-white resize-none"
-                  />
-                </div>
-
-                {/* Genre checklist */}
-                <div className="space-y-3">
-                  <Label className="text-zinc-400 text-xs font-semibold">
-                    Favorite Genres
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_GENRES.map((genre) => {
-                      const isSelected = selectedGenres.includes(genre);
-                      return (
-                        <button
-                          key={genre}
-                          type="button"
-                          onClick={() => toggleGenre(genre)}
-                          className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${
-                            isSelected
-                              ? "bg-red-500/10 border-red-500/40 text-red-400 font-semibold"
-                              : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700"
-                          }`}
-                        >
-                          {genre}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <Separator className="border-zinc-900" />
-
-                {/* Social media connections */}
-                <div className="space-y-4">
-                  <h4 className="font-bold text-xs uppercase text-zinc-500 tracking-wider">
-                    Social Links
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="edit-website"
-                        className="text-zinc-400 text-xs font-semibold"
-                      >
-                        Website URL
-                      </Label>
-                      <Input
-                        id="edit-website"
-                        value={form.website}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, website: e.target.value }))
-                        }
-                        placeholder="https://yourwebsite.com"
-                        className="bg-zinc-950 border-zinc-800 text-white h-11"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="edit-twitter"
-                        className="text-zinc-400 text-xs font-semibold"
-                      >
-                        Twitter Username
-                      </Label>
-                      <Input
-                        id="edit-twitter"
-                        value={form.twitter}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, twitter: e.target.value }))
-                        }
-                        placeholder="@username"
-                        className="bg-zinc-950 border-zinc-800 text-white h-11"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="edit-github"
-                        className="text-zinc-400 text-xs font-semibold"
-                      >
-                        GitHub Username
-                      </Label>
-                      <Input
-                        id="edit-github"
-                        value={form.github}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, github: e.target.value }))
-                        }
-                        placeholder="github_username"
-                        className="bg-zinc-950 border-zinc-800 text-white h-11"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="edit-facebook"
-                        className="text-zinc-400 text-xs font-semibold"
-                      >
-                        Facebook URL
-                      </Label>
-                      <Input
-                        id="edit-facebook"
-                        value={form.facebook}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, facebook: e.target.value }))
-                        }
-                        placeholder="https://facebook.com/profile"
-                        className="bg-zinc-950 border-zinc-800 text-white h-11"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-4 border-t border-zinc-900">
-                  <Button
-                    onClick={() => updateMutation.mutate()}
-                    disabled={updateMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 h-11 rounded-xl shadow-lg font-semibold"
-                  >
-                    {updateMutation.isPending ? "Saving..." : "Save Settings"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditing(false)}
-                    className="border-zinc-800 hover:bg-zinc-900 text-zinc-300 h-11 rounded-xl"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="bg-zinc-900/30 border-zinc-900 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-900/60 pb-4">
-                <div>
-                  <CardTitle className="text-lg font-bold text-white">
-                    Public Profile
-                  </CardTitle>
-                  <CardDescription className="text-zinc-500 text-xs">
-                    Information visible to the CineTube community.
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                {/* Bio info */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                    Biography
-                  </h4>
-                  <p className="text-zinc-300 text-sm leading-relaxed font-light">
-                    {profile.profile?.bio ||
-                      "No biography provided. Tell the community about your film and series tastes!"}
-                  </p>
-                </div>
-
-                <Separator className="border-zinc-900" />
-
-                {/* Genre badges list */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                    Favorite Genres
-                  </h4>
-                  {profile.profile?.favoriteGenres &&
-                  profile.profile.favoriteGenres.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {profile.profile.favoriteGenres.map((g) => (
-                        <Badge
-                          key={g}
-                          className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15"
-                        >
-                          {g}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-zinc-500 text-xs italic font-light">
-                      No genres selected yet. Edit your profile to select your
-                      favorites.
-                    </p>
-                  )}
-                </div>
-
-                <Separator className="border-zinc-900" />
-
-                {/* Social connections details */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                    Linked Social Accounts
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-1">
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <LinkIcon className="h-4 w-4 text-zinc-600 shrink-0" />
-                      <span className="text-zinc-500 text-xs">Website:</span>
-                      {profile.profile?.website ? (
-                        <a
-                          href={profile.profile.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline text-red-400 truncate"
-                        >
-                          {profile.profile.website.replace(/^https?:\/\//, "")}
-                        </a>
-                      ) : (
-                        <span className="text-zinc-600 text-xs italic">
-                          Not linked
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <TwitterIcon className="h-4 w-4 text-zinc-600 shrink-0" />
-                      <span className="text-zinc-500 text-xs">Twitter:</span>
-                      {profile.profile?.twitter ? (
-                        <span className="text-zinc-300">
-                          @{profile.profile.twitter.replace(/^@/, "")}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-600 text-xs italic">
-                          Not linked
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <GithubIcon className="h-4 w-4 text-zinc-600 shrink-0" />
-                      <span className="text-zinc-500 text-xs">GitHub:</span>
-                      {profile.profile?.github ? (
-                        <span className="text-zinc-300">
-                          {profile.profile.github}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-600 text-xs italic">
-                          Not linked
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <FacebookIcon className="h-4 w-4 text-zinc-600 shrink-0" />
-                      <span className="text-zinc-500 text-xs">Facebook:</span>
-                      {profile.profile?.facebook ? (
-                        <span className="text-zinc-300 truncate max-w-[150px]">
-                          {profile.profile.facebook.replace(
-                            /^https?:\/\/(www\.)?facebook\.com\//,
-                            "",
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-600 text-xs italic">
-                          Not linked
-                        </span>
-                      )}
+                      {ALL_GENRES.map((genre) => {
+                        const isSelected = selectedGenres.includes(genre);
+                        return (
+                          <button
+                            key={genre}
+                            type="button"
+                            onClick={() => toggleGenre(genre)}
+                            className={`rounded-full border px-3.5 py-1.5 text-xs transition-all ${
+                              isSelected
+                                ? "border-red-500/40 bg-red-500/10 font-semibold text-red-400"
+                                : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                            }`}
+                          >
+                            {genre}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
+                  <Separator className="bg-zinc-800" />
+
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Social links
+                    </h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="edit-website"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Website
+                        </Label>
+                        <Input
+                          id="edit-website"
+                          value={form.website}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, website: e.target.value }))
+                          }
+                          placeholder="https://yoursite.com"
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="edit-twitter"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Twitter
+                        </Label>
+                        <Input
+                          id="edit-twitter"
+                          value={form.twitter}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, twitter: e.target.value }))
+                          }
+                          placeholder="@username"
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="edit-github"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          GitHub
+                        </Label>
+                        <Input
+                          id="edit-github"
+                          value={form.github}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, github: e.target.value }))
+                          }
+                          placeholder="username"
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="edit-facebook"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Facebook
+                        </Label>
+                        <Input
+                          id="edit-facebook"
+                          value={form.facebook}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, facebook: e.target.value }))
+                          }
+                          placeholder="Profile URL"
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 border-t border-zinc-800 pt-6">
+                    <Button
+                      onClick={() => updateMutation.mutate()}
+                      disabled={updateMutation.isPending}
+                      className="h-11 rounded-xl bg-red-600 px-6 font-semibold shadow-lg hover:bg-red-700"
+                    >
+                      {updateMutation.isPending ? "Saving..." : "Save changes"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditing(false)}
+                      className="h-11 rounded-xl border-zinc-800 text-zinc-300 hover:bg-zinc-900"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="border-zinc-800/80 bg-zinc-900/40">
+                  <CardHeader>
+                    <CardTitle className="text-base font-bold text-white">
+                      About
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-zinc-300">
+                      {profile.profile?.bio ||
+                        "No bio yet. Tell the community what kind of films and series you love."}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800/80 bg-zinc-900/40">
+                  <CardHeader>
+                    <CardTitle className="text-base font-bold text-white">
+                      Favorite genres
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {profile.profile?.favoriteGenres &&
+                    profile.profile.favoriteGenres.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.profile.favoriteGenres.map((g) => (
+                          <Badge
+                            key={g}
+                            className="border border-red-500/20 bg-red-500/10 px-3 py-1 text-red-400"
+                          >
+                            {g}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm italic text-zinc-500">
+                        No genres selected. Edit your profile to add favorites.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800/80 bg-zinc-900/40">
+                  <CardHeader>
+                    <CardTitle className="text-base font-bold text-white">
+                      Account details
+                    </CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      Private information tied to your CineTube account.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-zinc-800/80">
+                    <div className="flex items-center justify-between py-3 first:pt-0">
+                      <span className="text-sm text-zinc-500">Email</span>
+                      <span className="text-sm font-medium text-zinc-200">
+                        {profile.email}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-sm text-zinc-500">Role</span>
+                      <span className="text-sm font-medium capitalize text-zinc-200">
+                        {profile.role.toLowerCase()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-sm text-zinc-500">Member since</span>
+                      <span className="text-sm font-medium text-zinc-200">
+                        {joinedDate}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 last:pb-0">
+                      <span className="text-sm text-zinc-500">
+                        Email verified
+                      </span>
+                      <span className="text-sm font-medium text-zinc-200">
+                        {profile.emailVerified ? "Yes" : "Pending"}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800/80 bg-zinc-900/40">
+                  <CardHeader>
+                    <CardTitle className="text-base font-bold text-white">
+                      Social profiles
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      {
+                        label: "Website",
+                        value: profile.profile?.website,
+                        icon: LinkIcon,
+                        href: profile.profile?.website ?? undefined,
+                        display: profile.profile?.website?.replace(
+                          /^https?:\/\//,
+                          "",
+                        ),
+                      },
+                      {
+                        label: "Twitter",
+                        value: profile.profile?.twitter,
+                        icon: TwitterIcon,
+                        display: profile.profile?.twitter
+                          ? `@${profile.profile.twitter.replace(/^@/, "")}`
+                          : undefined,
+                      },
+                      {
+                        label: "GitHub",
+                        value: profile.profile?.github,
+                        icon: GithubIcon,
+                        display: profile.profile?.github,
+                      },
+                      {
+                        label: "Facebook",
+                        value: profile.profile?.facebook,
+                        icon: FacebookIcon,
+                        display: profile.profile?.facebook?.replace(
+                          /^https?:\/\/(www\.)?facebook\.com\//,
+                          "",
+                        ),
+                      },
+                    ].map(({ label, value, icon: Icon, href, display }) => (
+                      <div
+                        key={label}
+                        className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-4 py-3"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900">
+                          <Icon className="h-4 w-4 text-zinc-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
+                            {label}
+                          </p>
+                          {value ? (
+                            href ? (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate text-sm text-red-400 hover:underline"
+                              >
+                                {display}
+                              </a>
+                            ) : (
+                              <p className="truncate text-sm text-zinc-300">
+                                {display}
+                              </p>
+                            )
+                          ) : (
+                            <p className="text-sm italic text-zinc-600">
+                              Not linked
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </main>
