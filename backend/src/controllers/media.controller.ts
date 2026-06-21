@@ -3,23 +3,16 @@ import * as mediaService from "../services/media.service";
 import * as cloudinaryService from "../services/cloudinary.service";
 import { sendSuccess } from "../utils/response";
 
-/**
- * Media Controller
- *
- * Handles media CRUD with Cloudinary image uploads.
- * When a file is present in the request, it's uploaded to Cloudinary
- * and the resulting URL + public ID are passed to the service.
- */
+// Media CRUD. When a file is attached it's uploaded to Cloudinary first and
+// the resulting URL + public ID are forwarded to the service layer.
 
-// ── POST /media (Admin) ──────────────────────────────────
-
+// POST /media (admin)
 export async function create(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    // If a file was uploaded, send it to Cloudinary
     if (req.file) {
       const result = await cloudinaryService.uploadImage(req.file.buffer);
       req.body.posterUrl = result.secure_url;
@@ -33,22 +26,20 @@ export async function create(
   }
 }
 
-// ── PUT /media/:id (Admin) ───────────────────────────────
-
+// PUT /media/:id (admin)
 export async function update(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    // If a new file was uploaded, send it to Cloudinary
     if (req.file) {
       const result = await cloudinaryService.uploadImage(req.file.buffer);
       req.body.posterUrl = result.secure_url;
       req.body.posterPublicId = result.public_id;
     }
 
-    // If poster was explicitly removed (no new file), clear the fields
+    // Poster cleared without a replacement — remove the existing Cloudinary asset.
     if (req.body.posterRemoved === true && !req.file) {
       const existing = await mediaService.getMediaById(req.params.id);
       if (existing.posterPublicId) {
@@ -66,8 +57,7 @@ export async function update(
   }
 }
 
-// ── DELETE /media/:id (Admin) ────────────────────────────
-
+// DELETE /media/:id (admin)
 export async function remove(
   req: Request,
   res: Response,
@@ -81,8 +71,7 @@ export async function remove(
   }
 }
 
-// ── GET /media (Public) ──────────────────────────────────
-
+// GET /media (public)
 export async function list(
   req: Request,
   res: Response,
@@ -96,8 +85,7 @@ export async function list(
   }
 }
 
-// ── GET /media/genres (Public) ───────────────────────────
-
+// GET /media/genres (public)
 export async function genres(
   _req: Request,
   res: Response,
@@ -111,8 +99,7 @@ export async function genres(
   }
 }
 
-// ── GET /media/:slug (Public) ────────────────────────────
-
+// GET /media/:slug (public)
 export async function getBySlug(
   req: Request,
   res: Response,
@@ -129,8 +116,7 @@ export async function getBySlug(
   }
 }
 
-// ── GET /media/:slug/stream (Authenticated) ───────────────
-
+// GET /media/:slug/stream (authenticated)
 export async function getStream(
   req: Request,
   res: Response,
@@ -148,8 +134,7 @@ export async function getStream(
   }
 }
 
-// ── POST /media/:slug/view (Public — called by frontend) ──
-
+// POST /media/:slug/view (public)
 export async function recordView(
   req: Request,
   res: Response,
@@ -163,8 +148,7 @@ export async function recordView(
   }
 }
 
-// ── GET /media/admin/:id (Admin) ────────────────────────
-
+// GET /media/admin/:id (admin)
 export async function getById(
   req: Request,
   res: Response,

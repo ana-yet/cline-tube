@@ -1,16 +1,7 @@
 import prisma from "../config/prisma";
 import { ApiError } from "../utils/errors";
 
-/**
- * Watchlist Service
- *
- * Manages user watchlists with duplicate prevention.
- */
-
-// ── Add to Watchlist ──────────────────────────────────────
-
 export async function addToWatchlist(userId: string, mediaId: string) {
-  // Verify media exists
   const media = await prisma.media.findUnique({
     where: { id: mediaId },
     select: { id: true },
@@ -34,7 +25,7 @@ export async function addToWatchlist(userId: string, mediaId: string) {
   });
 }
 
-// ── Remove from Watchlist ─────────────────────────────────
+// Remove from Watchlist
 
 export async function removeFromWatchlist(userId: string, mediaId: string) {
   const existing = await prisma.watchlist.findUnique({
@@ -50,7 +41,7 @@ export async function removeFromWatchlist(userId: string, mediaId: string) {
   });
 }
 
-// ── Get User Watchlist ────────────────────────────────────
+// Get User Watchlist
 
 export async function getWatchlist(userId: string) {
   const items = await prisma.watchlist.findMany({

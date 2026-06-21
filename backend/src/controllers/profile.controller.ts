@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import * as profileService from "../services/profile.service";
 import { sendSuccess } from "../utils/response";
 
-/**
- * Profile Controller
- */
-
 export async function get(
   req: Request,
   res: Response,

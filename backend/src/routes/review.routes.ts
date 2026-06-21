@@ -32,7 +32,7 @@ import * as commentController from "../controllers/comment.controller";
 
 const router = Router();
 
-// ── Public Routes ─────────────────────────────────────────
+// Public Routes
 
 router.get(
   "/media/:slug",
@@ -46,7 +46,7 @@ router.get(
   reviewController.getMyReviewForMedia,
 );
 
-// ── Authenticated Routes ──────────────────────────────────
+// Authenticated Routes
 
 router.post(
   "/",
@@ -88,7 +88,7 @@ router.delete(
 
 router.post("/:id/like", authenticate, reviewController.toggleLike);
 
-// ── Admin Routes ──────────────────────────────────────────
+// Admin Routes
 
 router.get(
   "/pending",

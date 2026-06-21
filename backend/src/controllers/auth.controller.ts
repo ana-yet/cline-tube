@@ -1,26 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
-import { sendSuccess } from "../utils/response";
 import {
   refreshTokenCookieOptions,
   clearRefreshTokenCookieOptions,
 } from "../services/auth.service";
+import { sendSuccess } from "../utils/response";
 
-/**
- * Auth Controller
- *
- * Thin HTTP layer that:
- * 1. Extracts data from the request
- * 2. Calls the auth service
- * 3. Sets cookies (refresh token)
- * 4. Returns JSON responses
- *
- * All business logic lives in auth.service.ts.
- * Error handling is delegated to the global error handler.
- */
-
-// ── POST /auth/register ───────────────────────────────────
-
+// POST /auth/register
 export async function register(
   req: Request,
   res: Response,
@@ -45,7 +31,7 @@ export async function register(
   }
 }
 
-// ── POST /auth/login ──────────────────────────────────────
+// POST /auth/login
 
 export async function login(
   req: Request,
@@ -67,7 +53,7 @@ export async function login(
   }
 }
 
-// ── POST /auth/logout ─────────────────────────────────────
+// POST /auth/logout
 
 export async function logout(
   req: Request,
@@ -88,7 +74,7 @@ export async function logout(
   }
 }
 
-// ── POST /auth/refresh ────────────────────────────────────
+// POST /auth/refresh
 
 export async function refresh(
   req: Request,
@@ -125,7 +111,7 @@ export async function refresh(
   }
 }
 
-// ── GET /auth/me ──────────────────────────────────────────
+// GET /auth/me
 
 export async function me(
   req: Request,
@@ -142,7 +128,7 @@ export async function me(
   }
 }
 
-// ── POST /auth/forgot-password ─────────────────────────────
+// POST /auth/forgot-password
 
 export async function forgotPassword(
   req: Request,
@@ -164,7 +150,7 @@ export async function forgotPassword(
   }
 }
 
-// ── POST /auth/reset-password ─────────────────────────────
+// POST /auth/reset-password
 
 export async function resetPassword(
   req: Request,

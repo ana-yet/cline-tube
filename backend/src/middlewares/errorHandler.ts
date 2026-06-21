@@ -4,38 +4,19 @@ import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { ZodError } from "zod";
 import { ApiError } from "../utils/errors";
 
-/**
- * Global Error Handler Middleware
- *
- * Catches ALL unhandled errors from the request pipeline and returns
- * a consistent JSON error response. Never exposes internal details in production.
- *
- * Error Classification:
- * - ApiError        → Known business logic errors (custom status + message)
- * - ZodError        → Validation failures (400)
- * - PrismaClientKnownRequestError → Database constraint violations (409/400)
- * - TokenExpiredError → JWT expired (401)
- * - JsonWebTokenError → JWT invalid (401)
- * - Unknown errors  → Internal server error (500)
- *
- * Architectural Decision: All error responses follow the same shape:
- * { success: false, error: { message, code, details? } }
- * This allows the frontend to handle errors uniformly.
- */
-
+// Maps known error types to consistent JSON responses and hides internal
+// details in production. Unhandled errors fall through to a generic 500.
 export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
   _next: NextFunction,
 ): void => {
-  // Log the error with request context
   console.error(`[ERROR] ${req.method} ${req.path} — ${err.message}`, {
     requestId: req.requestId,
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 
-  // ── ApiError (known business errors) ─────────────────
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
       success: false,
@@ -48,7 +29,6 @@ export const errorHandler = (
     return;
   }
 
-  // ── Zod Validation Error ─────────────────────────────
   if (err instanceof ZodError) {
     res.status(400).json({
       success: false,
@@ -64,10 +44,9 @@ export const errorHandler = (
     return;
   }
 
-  // ── Prisma Database Errors ───────────────────────────
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
-      case "P2002": // Unique constraint violation
+      case "P2002": // unique constraint
         res.status(409).json({
           success: false,
           error: {
@@ -77,7 +56,7 @@ export const errorHandler = (
         });
         return;
 
-      case "P2025": // Record not found
+      case "P2025": // record not found
         res.status(404).json({
           success: false,
           error: {
@@ -87,7 +66,7 @@ export const errorHandler = (
         });
         return;
 
-      case "P2003": // Foreign key constraint
+      case "P2003": // foreign key constraint
         res.status(400).json({
           success: false,
           error: {
@@ -109,7 +88,6 @@ export const errorHandler = (
     }
   }
 
-  // ── JWT Errors ───────────────────────────────────────
   if (err instanceof TokenExpiredError) {
     res.status(401).json({
       success: false,
@@ -132,7 +110,6 @@ export const errorHandler = (
     return;
   }
 
-  // ── Unknown Errors (500) ─────────────────────────────
   res.status(500).json({
     success: false,
     error: {

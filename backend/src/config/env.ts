@@ -1,15 +1,7 @@
 import { z } from "zod";
 
-/**
- * Environment Variable Validation
- *
- * Uses Zod to validate ALL required environment variables at startup.
- * If any variable is missing or invalid, the server crashes immediately
- * with a descriptive error — never silently running with undefined config.
- *
- * Architectural Decision: Fail-fast on missing env vars prevents
- * runtime surprises in production (e.g., undefined JWT_SECRET).
- */
+// Validate environment variables at startup so the server fails fast with a
+// clear message instead of running with undefined config.
 const envSchema = z.object({
   DATABASE_URL: z.string().url({
     message: "DATABASE_URL must be a valid PostgreSQL connection string",
@@ -44,14 +36,10 @@ const envSchema = z.object({
     .min(1, { message: "CLOUDINARY_API_SECRET is required" }),
 });
 
-/**
- * Parse and validate environment variables.
- * Throws ZodError with detailed messages if validation fails.
- */
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error("❌ Invalid environment variables:");
+  console.error("Invalid environment variables:");
   console.error(parsed.error.flatten().fieldErrors);
   process.exit(1);
 }

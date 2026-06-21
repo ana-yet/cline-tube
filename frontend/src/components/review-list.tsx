@@ -197,7 +197,7 @@ export function ReviewList({ reviews, mediaId }: ReviewListProps) {
   );
 }
 
-// ── Spoiler Content Component ─────────────────────────────
+// Spoiler Content Component
 
 function SpoilerContent({
   content,

@@ -2,14 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as reviewService from "../services/review.service";
 import { sendSuccess } from "../utils/response";
 
-/**
- * Review Controller
- *
- * Thin HTTP layer for review operations.
- */
-
-// ── POST /reviews (Authenticated) ─────────────────────────
-
+// POST /reviews (authenticated)
 export async function create(
   req: Request,
   res: Response,
@@ -23,7 +16,7 @@ export async function create(
   }
 }
 
-// ── PUT /reviews/:id (Owner only) ─────────────────────────
+// PUT /reviews/:id (owner only)
 
 export async function update(
   req: Request,
@@ -42,7 +35,7 @@ export async function update(
   }
 }
 
-// ── DELETE /reviews/:id (Owner only) ──────────────────────
+// DELETE /reviews/:id (owner only)
 
 export async function remove(
   req: Request,
@@ -57,7 +50,7 @@ export async function remove(
   }
 }
 
-// ── GET /reviews/media/:slug (Public) ─────────────────────
+// GET /reviews/media/:slug (public)
 
 export async function getByMedia(
   req: Request,
@@ -75,7 +68,7 @@ export async function getByMedia(
   }
 }
 
-// ── GET /reviews/media/:slug/mine (Authenticated) ───────
+// GET /reviews/media/:slug/mine (authenticated)
 
 export async function getMyReviewForMedia(
   req: Request,
@@ -93,7 +86,7 @@ export async function getMyReviewForMedia(
   }
 }
 
-// ── GET /reviews/mine (Authenticated) ─────────────────────
+// GET /reviews/mine (authenticated)
 
 export async function getMine(
   req: Request,
@@ -111,7 +104,7 @@ export async function getMine(
   }
 }
 
-// ── GET /reviews/pending (Admin) ──────────────────────────
+// GET /reviews/pending (admin)
 
 export async function getPending(
   req: Request,
@@ -126,7 +119,7 @@ export async function getPending(
   }
 }
 
-// ── POST /reviews/:id/approve (Admin) ─────────────────────
+// POST /reviews/:id/approve (admin)
 
 export async function approve(
   req: Request,
@@ -141,7 +134,7 @@ export async function approve(
   }
 }
 
-// ── POST /reviews/:id/reject (Admin) ──────────────────────
+// POST /reviews/:id/reject (admin)
 
 export async function reject(
   req: Request,
@@ -156,7 +149,7 @@ export async function reject(
   }
 }
 
-// ── POST /reviews/:id/like (Authenticated) ────────────────
+// POST /reviews/:id/like (authenticated)
 
 export async function toggleLike(
   req: Request,

@@ -3,26 +3,14 @@ import prisma from "../config/prisma";
 import { env } from "../config/env";
 import { ApiError } from "../utils/errors";
 
-/**
- * Payment Service
- *
- * Handles Stripe integration for subscriptions.
- *
- * Plans:
- * - MONTHLY: $9.99/month
- * - YEARLY: $99.99/year (17% discount)
- *
- * Security:
- * - Prices are server-side only (never trust client)
- * - Webhook signature verification required
- * - Stripe customer created on first checkout
- */
+// Stripe subscription integration. Prices live server-side only and webhook
+// signatures are verified before any subscription state changes.
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2026-05-27.dahlia",
 });
 
-// ── Plan Pricing (server-side, never trust client) ────────
+// Plan pricing is defined here, never accepted from the client.
 
 const PLAN_PRICES: Record<
   string,
@@ -69,7 +57,7 @@ function buildCheckoutRedirectUrl(
   return url.href;
 }
 
-// ── Create or Get Stripe Customer ─────────────────────────
+// Create or Get Stripe Customer
 
 async function getOrCreateStripeCustomer(
   userId: string,
@@ -92,7 +80,7 @@ async function getOrCreateStripeCustomer(
   return customer.id;
 }
 
-// ── Create Checkout Session ───────────────────────────────
+// Create Checkout Session
 
 export async function createCheckoutSession(
   userId: string,
@@ -155,7 +143,7 @@ export async function createCheckoutSession(
   return { sessionId: session.id, url: session.url };
 }
 
-// ── Get User Subscription ─────────────────────────────────
+// Get User Subscription
 
 export async function getSubscription(userId: string) {
   const subscription = await prisma.subscription.findUnique({
@@ -189,7 +177,7 @@ export async function getSubscription(userId: string) {
   return subscription;
 }
 
-// ── Cancel Subscription ───────────────────────────────────
+// Cancel Subscription
 
 export async function cancelSubscription(userId: string) {
   const subscription = await prisma.subscription.findUnique({
@@ -229,18 +217,12 @@ export async function cancelSubscription(userId: string) {
   };
 }
 
-// ── Handle Webhook Events ─────────────────────────────────
-
 export async function handleWebhookEvent(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.userId;
       const plan = session.metadata?.plan;
-
-      console.log("Webhook Event:", event.type);
-      console.log("User:", userId);
-      console.log("Plan:", plan);
 
       if (!userId || !plan) {
         console.warn(
@@ -284,10 +266,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
         }),
       ]);
 
-      console.log(
-        "checkout.session.completed processed — subscription upgraded:",
-        { userId, plan, subscriptionId, periodEnd: periodEnd.toISOString() },
-      );
+      console.log("Subscription activated", { userId, plan, subscriptionId });
       break;
     }
 
@@ -303,9 +282,6 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       const userId = stripeSubscription.metadata?.userId;
 
       if (!userId) break;
-
-      console.log("Webhook Event:", event.type);
-      console.log("User:", userId);
 
       const periodStart = new Date(
         stripeSubscription.items.data[0].current_period_start * 1000,
@@ -336,11 +312,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
         }),
       ]);
 
-      console.log("invoice.paid processed — renewal transaction created:", {
-        userId,
-        invoiceId: invoice.id,
-        periodEnd: periodEnd.toISOString(),
-      });
+      console.log("Subscription renewed", { userId, invoiceId: invoice.id });
       break;
     }
 
@@ -357,18 +329,12 @@ export async function handleWebhookEvent(event: Stripe.Event) {
 
       if (!userId) break;
 
-      console.log("Webhook Event:", event.type);
-      console.log("User:", userId);
-
       await prisma.subscription.update({
         where: { userId },
         data: { status: "PAST_DUE" },
       });
 
-      console.log("invoice.payment_failed processed — status set to PAST_DUE:", {
-        userId,
-        invoiceId: invoice.id,
-      });
+      console.log("Subscription past due", { userId, invoiceId: invoice.id });
       break;
     }
 
@@ -419,7 +385,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
   }
 }
 
-// ── Verify Webhook Signature ──────────────────────────────
+// Verify Webhook Signature
 
 export function constructWebhookEvent(
   payload: Buffer,
@@ -432,7 +398,7 @@ export function constructWebhookEvent(
   );
 }
 
-// ── Admin: Get Revenue Stats ──────────────────────────────
+// Admin: Get Revenue Stats
 
 export async function getRevenueStats() {
   const now = new Date();

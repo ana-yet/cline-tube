@@ -1,13 +1,7 @@
 import { Request, Response } from "express";
 import * as paymentService from "../services/payment.service";
 
-/**
- * Stripe Webhook Controller
- *
- * Handles incoming Stripe webhook events.
- * Uses raw body for signature verification.
- */
-
+// Receives Stripe webhook events; the raw body is required for signature checks.
 export async function handleWebhook(
   req: Request,
   res: Response,

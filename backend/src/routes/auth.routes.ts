@@ -32,7 +32,7 @@ import {
 
 const router = Router();
 
-// ── Public Routes (rate-limited) ──────────────────────────
+// Public Routes (rate-limited)
 
 router.post(
   "/register",
@@ -57,11 +57,11 @@ router.post(
   authController.resetPassword,
 );
 
-// ── Token Refresh (no auth required, uses cookie) ─────────
+// Token Refresh (no auth required, uses cookie)
 
 router.post("/refresh", authController.refresh);
 
-// ── Protected Routes ──────────────────────────────────────
+// Protected Routes
 
 router.post("/logout", authController.logout);
 router.get("/me", authenticate, authController.me);

@@ -4,24 +4,8 @@ import { env } from "../config/env";
 import prisma from "../config/prisma";
 import { JwtPayload } from "../types";
 
-/**
- * Authentication Middleware
- *
- * Verifies the JWT access token from the Authorization header.
- * Format: "Bearer <token>"
- *
- * Flow:
- * 1. Extract token from Authorization header
- * 2. Verify signature and expiry using JWT_SECRET
- * 3. Fetch user from database (ensures user still exists and is not soft-deleted)
- * 4. Attach user payload to req.user for downstream handlers
- *
- * Architectural Decisions:
- * - Access token is short-lived (15 min) — stored in memory on client, NOT in cookies
- * - Refresh token is HttpOnly cookie — used only for /auth/refresh
- * - Database lookup on every authenticated request ensures deleted users are blocked immediately
- * - Soft-deleted users (isDeleted=true) are rejected
- */
+// Requires a valid Bearer access token. Re-checks the user in the database on
+// every request so deactivated/soft-deleted accounts are rejected immediately.
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -42,11 +26,8 @@ export const authenticate = async (
     }
 
     const token = authHeader.split(" ")[1];
-
-    // Verify JWT
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
-    // Fetch user from database
     const user = await prisma.user.findUnique({
       where: { id: decoded.sub },
       select: {
@@ -69,7 +50,6 @@ export const authenticate = async (
       return;
     }
 
-    // Attach user to request
     req.user = {
       id: user.id,
       email: user.email,
@@ -105,10 +85,8 @@ export const authenticate = async (
   }
 };
 
-/**
- * Optional authentication — attaches req.user when a valid Bearer token is present.
- * Does not reject unauthenticated requests (used for premium-aware public endpoints).
- */
+// Attaches req.user when a valid token is present but never rejects.
+// Used by premium-aware public endpoints that adapt to the viewer.
 export const optionalAuthenticate = async (
   req: Request,
   _res: Response,

@@ -1,16 +1,8 @@
 import { Response } from "express";
 
-/**
- * Standardized API Response Helpers
- *
- * Ensures every API response follows the same envelope:
- *   Success: { success: true, data: T, meta?: PaginationMeta }
- *   Error:   { success: false, error: { message, code, details? } }
- *
- * Architectural Decision: Consistent response shape allows the frontend
- * to write a single Axios interceptor that handles all responses uniformly.
- */
-
+// Shared response envelope:
+//   success: { success: true, data, meta? }
+//   error:   { success: false, error: { message, code, details? } }
 interface PaginationMeta {
   page: number;
   limit: number;

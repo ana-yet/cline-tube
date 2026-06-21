@@ -12,7 +12,7 @@ import { z } from "zod";
  * - Matches frontend validation rules for consistency
  */
 
-// ── Register ──────────────────────────────────────────────
+// Register
 
 export const registerSchema = z.object({
   name: z
@@ -37,7 +37,7 @@ export const registerSchema = z.object({
     ),
 });
 
-// ── Login ─────────────────────────────────────────────────
+// Login
 
 export const loginSchema = z.object({
   email: z
@@ -49,7 +49,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-// ── Forgot Password ───────────────────────────────────────
+// Forgot Password
 
 export const forgotPasswordSchema = z.object({
   email: z
@@ -60,7 +60,7 @@ export const forgotPasswordSchema = z.object({
     .trim(),
 });
 
-// ── Reset Password ────────────────────────────────────────
+// Reset Password
 
 export const resetPasswordSchema = z
   .object({
@@ -80,7 +80,7 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-// ── Type Exports ──────────────────────────────────────────
+// Type Exports
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

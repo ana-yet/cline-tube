@@ -1,18 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from "uuid";
 
-/**
- * Request ID Middleware
- *
- * Assigns a unique UUID to every incoming request for distributed tracing.
- * Uses the X-Request-ID header if provided (from load balancers/proxies),
- * or generates a new UUID.
- *
- * Architectural Decision: Request IDs enable:
- * - Correlating logs across services
- * - Debugging specific user-reported issues
- * - Frontend error reporting with server-side traceability
- */
+// Tags each request with an ID (reusing an upstream X-Request-ID when present)
+// so logs and client error reports can be correlated.
 export const requestId = (
   req: Request,
   res: Response,

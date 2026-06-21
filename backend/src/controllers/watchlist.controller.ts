@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import * as watchlistService from "../services/watchlist.service";
 import { sendSuccess } from "../utils/response";
 
-/**
- * Watchlist Controller
- */
-
 export async function add(
   req: Request,
   res: Response,

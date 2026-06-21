@@ -10,25 +10,12 @@ import {
 } from "../utils/jwt";
 import type { RegisterInput, LoginInput } from "../validations/auth.validation";
 
-/**
- * Authentication Service
- *
- * Contains ALL authentication business logic.
- * Controllers are thin wrappers that call these functions.
- *
- * Security Design:
- * - Passwords hashed with bcrypt (12 salt rounds)
- * - Refresh tokens are opaque UUIDs stored in DB (not JWTs)
- * - Old refresh tokens are revoked on rotation (deleted from DB)
- * - Password reset tokens are single-use with 1-hour expiry
- * - Soft-deleted users cannot authenticate
- */
+// Authentication logic: bcrypt password hashing, rotating refresh tokens
+// (hashed in the DB and revoked on use), and single-use password reset tokens.
 
 const BCRYPT_SALT_ROUNDS = 12;
 const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
-
-// ── Cookie Configuration ──────────────────────────────────
 
 export const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -48,7 +35,7 @@ export const clearRefreshTokenCookieOptions = {
   path: refreshTokenCookieOptions.path,
 };
 
-// ── Helper: Build safe user object ────────────────────────
+// Helper: Build safe user object
 
 function sanitizeUser(user: {
   id: string;
@@ -70,7 +57,7 @@ function sanitizeUser(user: {
   };
 }
 
-// ── Register ──────────────────────────────────────────────
+// Register
 
 export async function register(input: RegisterInput) {
   const { name, email, password } = input;
@@ -134,7 +121,7 @@ export async function register(input: RegisterInput) {
   };
 }
 
-// ── Login ─────────────────────────────────────────────────
+// Login
 
 export async function login(input: LoginInput) {
   const { email, password } = input;
@@ -194,7 +181,7 @@ export async function login(input: LoginInput) {
   };
 }
 
-// ── Logout ────────────────────────────────────────────────
+// Logout
 
 export async function logout(refreshToken: string | undefined) {
   if (refreshToken) {
@@ -205,7 +192,7 @@ export async function logout(refreshToken: string | undefined) {
   }
 }
 
-// ── Refresh Token Rotation ────────────────────────────────
+// Refresh Token Rotation
 
 export async function refreshTokens(oldRefreshToken: string) {
   // Hash the incoming token to look up in DB (only hashes are stored)
@@ -252,7 +239,7 @@ export async function refreshTokens(oldRefreshToken: string) {
 
   const user = storedToken.user;
 
-  // ── Token Rotation: revoke old, issue new ───────────────
+  // Token Rotation: revoke old, issue new
   await prisma.refreshToken.delete({ where: { id: storedToken.id } });
 
   const accessToken = generateAccessToken(user.id, user.email, user.role);
@@ -273,7 +260,7 @@ export async function refreshTokens(oldRefreshToken: string) {
   };
 }
 
-// ── Get Current User ──────────────────────────────────────
+// Get Current User
 
 export async function getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
@@ -327,7 +314,7 @@ export async function getCurrentUser(userId: string) {
   };
 }
 
-// ── Request Password Reset ────────────────────────────────
+// Request Password Reset
 
 export async function requestPasswordReset(email: string) {
   // Always return success to prevent email enumeration
@@ -364,7 +351,7 @@ export async function requestPasswordReset(email: string) {
   return;
 }
 
-// ── Reset Password ────────────────────────────────────────
+// Reset Password
 
 export async function resetPassword(token: string, newPassword: string) {
   // Find the reset token

@@ -1,18 +1,9 @@
 import { z } from "zod";
 
-/**
- * Zod Validation Schemas
- *
- * Shared validation schemas used for:
- * 1. Frontend form validation (React Hook Form + Zod resolver)
- * 2. API request body validation
- *
- * Architectural Decision: Schemas are defined once and reused.
- * They mirror backend validation rules to ensure consistency.
- * React Hook Form uses these via zodResolver for real-time validation.
- */
+// Form validation schemas shared across the app. They mirror the backend
+// rules so client and server validation stay consistent.
 
-// ── Auth Schemas ──────────────────────────────────────────
+// Auth Schemas
 
 export const loginSchema = z.object({
   email: z
@@ -76,7 +67,7 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-// ── Profile Schemas ───────────────────────────────────────
+// Profile Schemas
 
 export const profileSchema = z.object({
   name: z
@@ -101,7 +92,7 @@ export const profileSchema = z.object({
   github: z.string().max(100).optional().nullable().or(z.literal("")),
 });
 
-// ── Review Schemas ────────────────────────────────────────
+// Review Schemas
 
 export const reviewSchema = z.object({
   rating: z
@@ -117,7 +108,7 @@ export const reviewSchema = z.object({
   mediaId: z.string().uuid("Invalid media ID"),
 });
 
-// ── Comment Schemas ───────────────────────────────────────
+// Comment Schemas
 
 export const commentSchema = z.object({
   content: z
@@ -127,7 +118,7 @@ export const commentSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
 });
 
-// ── Report Schemas ────────────────────────────────────────
+// Report Schemas
 
 export const reportSchema = z.object({
   reason: z.enum(["SPAM", "SPOILER", "HARASSMENT", "INAPPROPRIATE", "OTHER"]),
@@ -137,7 +128,7 @@ export const reportSchema = z.object({
     .optional(),
 });
 
-// ── Type Inference ────────────────────────────────────────
+// Type Inference
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;

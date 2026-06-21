@@ -6,7 +6,7 @@ import { z } from "zod";
  * Zod schemas for review CRUD and admin moderation.
  */
 
-// ── Create Review ─────────────────────────────────────────
+// Create Review
 
 export const createReviewSchema = z.object({
   mediaId: z.string().uuid("Invalid media ID"),
@@ -27,7 +27,7 @@ export const createReviewSchema = z.object({
   spoilerWarning: z.boolean().default(false),
 });
 
-// ── Update Review ─────────────────────────────────────────
+// Update Review
 
 export const updateReviewSchema = z.object({
   rating: z
@@ -49,7 +49,7 @@ export const updateReviewSchema = z.object({
   spoilerWarning: z.boolean().optional(),
 });
 
-// ── Review Query Parameters ───────────────────────────────
+// Review Query Parameters
 
 export const reviewQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -60,7 +60,7 @@ export const reviewQuerySchema = z.object({
   sortBy: z.enum(["latest", "top-rated", "most-liked"]).default("latest"),
 });
 
-// ── Admin Review Action ───────────────────────────────────
+// Admin Review Action
 
 export const reviewActionSchema = z.object({
   reason: z
@@ -69,7 +69,7 @@ export const reviewActionSchema = z.object({
     .optional(),
 });
 
-// ── Type Exports ──────────────────────────────────────────
+// Type Exports
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type UpdateReviewInput = z.infer<typeof updateReviewSchema>;

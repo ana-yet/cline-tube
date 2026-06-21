@@ -3,15 +3,9 @@ import * as cloudinaryService from "../services/cloudinary.service";
 import { sendSuccess } from "../utils/response";
 import { ApiError } from "../utils/errors";
 
-/**
- * Upload Controller
- *
- * Handles standalone image upload/delete endpoints.
- * Used for general image management outside of media CRUD.
- */
+// Standalone image upload/delete endpoints used outside of media CRUD.
 
-// ── POST /upload/image ────────────────────────────────────
-
+// POST /upload/image
 export async function uploadImage(
   req: Request,
   res: Response,
@@ -37,16 +31,14 @@ export async function uploadImage(
   }
 }
 
-// ── DELETE /upload/:publicId ──────────────────────────────
-
+// DELETE /upload/:publicId
 export async function deleteImage(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    // publicId may contain slashes (e.g., "cinetube/media/abc123")
-    // Express URL-encoded it, so decode it
+    // publicId can contain slashes (e.g. "cinetube/media/abc123"), so decode it.
     const publicId = decodeURIComponent(req.params.publicId);
 
     await cloudinaryService.deleteImage(publicId);

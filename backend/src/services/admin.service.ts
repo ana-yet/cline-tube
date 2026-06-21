@@ -1,10 +1,7 @@
 import prisma from "../config/prisma";
 import { getRevenueStats } from "./payment.service";
 
-/**
- * Admin Service — Dashboard KPI Aggregation
- */
-
+// Aggregates the counts and revenue figures shown on the admin dashboard.
 export async function getDashboardKPIs() {
   const [
     totalUsers,

@@ -18,7 +18,7 @@ export type ReportReason =
   | "OTHER";
 export type ReportStatus = "PENDING" | "RESOLVED" | "DISMISSED";
 
-// ── User ──────────────────────────────────────────────────
+// User
 
 export interface User {
   id: string;
@@ -41,7 +41,7 @@ export interface UserProfile extends User {
   } | null;
 }
 
-// ── Auth ──────────────────────────────────────────────────
+// Auth
 
 export interface AuthState {
   user: User | null;
@@ -65,7 +65,7 @@ export interface AuthResponse {
   accessToken: string;
 }
 
-// ── Media ─────────────────────────────────────────────────
+// Media
 
 export interface Media {
   id: string;
@@ -102,7 +102,7 @@ export interface MediaSummary {
   genres: { genre: { name: string } }[];
 }
 
-// ── Review ────────────────────────────────────────────────
+// Review
 
 export interface Review {
   id: string;
@@ -119,7 +119,7 @@ export interface Review {
   createdAt: string;
 }
 
-// ── Comment ───────────────────────────────────────────────
+// Comment
 
 export interface Comment {
   id: string;
@@ -133,7 +133,7 @@ export interface Comment {
   updatedAt: string;
 }
 
-// ── Subscription ──────────────────────────────────────────
+// Subscription
 
 export interface Subscription {
   id: string;
@@ -144,7 +144,7 @@ export interface Subscription {
   createdAt: string;
 }
 
-// ── API Response Envelope ─────────────────────────────────
+// API Response Envelope
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -176,7 +176,7 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-// ── Query Parameters ──────────────────────────────────────
+// Query Parameters
 
 export interface MediaQueryParams {
   page?: number;

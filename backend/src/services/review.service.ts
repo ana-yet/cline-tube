@@ -21,7 +21,7 @@ import type {
  * - Editing a review resets status to PENDING (re-approval required)
  */
 
-// ── Select Clauses ────────────────────────────────────────
+// Select Clauses
 
 const reviewSelect = {
   id: true,
@@ -50,7 +50,7 @@ const reviewSelect = {
   },
 } as const;
 
-// ── Recalculate Media Rating (called in transactions) ─────
+// Recalculate Media Rating (called in transactions)
 
 async function recalculateMediaRating(
   tx: Prisma.TransactionClient,
@@ -71,7 +71,7 @@ async function recalculateMediaRating(
   });
 }
 
-// ── Create Review ─────────────────────────────────────────
+// Create Review
 
 export async function createReview(userId: string, input: CreateReviewInput) {
   // Verify media exists
@@ -116,7 +116,7 @@ export async function createReview(userId: string, input: CreateReviewInput) {
   return review;
 }
 
-// ── Update Review ─────────────────────────────────────────
+// Update Review
 
 export async function updateReview(
   userId: string,
@@ -155,7 +155,7 @@ export async function updateReview(
   return updated;
 }
 
-// ── Delete Review ─────────────────────────────────────────
+// Delete Review
 
 export async function deleteReview(userId: string, reviewId: string) {
   const review = await prisma.review.findUnique({
@@ -186,7 +186,7 @@ export async function deleteReview(userId: string, reviewId: string) {
   });
 }
 
-// ── Get Reviews by Media (Public — only APPROVED) ─────────
+// Get Reviews by Media (Public — only APPROVED)
 
 export async function getReviewsByMedia(
   mediaSlug: string,
@@ -243,7 +243,7 @@ export async function getReviewsByMedia(
   };
 }
 
-// ── Get My Review for Media (Authenticated — any status) ──
+// Get My Review for Media (Authenticated — any status)
 
 export async function getMyReviewForMedia(userId: string, mediaSlug: string) {
   const media = await prisma.media.findUnique({
@@ -265,7 +265,7 @@ export async function getMyReviewForMedia(userId: string, mediaSlug: string) {
   return review;
 }
 
-// ── Get My Reviews ────────────────────────────────────────
+// Get My Reviews
 
 export async function getMyReviews(userId: string, query: ReviewQueryInput) {
   const { page, limit } = query;
@@ -306,7 +306,7 @@ export async function getMyReviews(userId: string, query: ReviewQueryInput) {
   };
 }
 
-// ── Admin: Get Pending Reviews ────────────────────────────
+// Admin: Get Pending Reviews
 
 export async function getPendingReviews(query: ReviewQueryInput) {
   const { page, limit } = query;
@@ -347,7 +347,7 @@ export async function getPendingReviews(query: ReviewQueryInput) {
   };
 }
 
-// ── Admin: Approve Review ─────────────────────────────────
+// Admin: Approve Review
 
 export async function approveReview(reviewId: string) {
   const review = await prisma.review.findUnique({
@@ -382,7 +382,7 @@ export async function approveReview(reviewId: string) {
   return updated;
 }
 
-// ── Admin: Reject Review ──────────────────────────────────
+// Admin: Reject Review
 
 export async function rejectReview(reviewId: string) {
   const review = await prisma.review.findUnique({
@@ -418,7 +418,7 @@ export async function rejectReview(reviewId: string) {
   return updated;
 }
 
-// ── Toggle Like ───────────────────────────────────────────
+// Toggle Like
 
 export async function toggleLike(userId: string, reviewId: string) {
   // Verify review exists

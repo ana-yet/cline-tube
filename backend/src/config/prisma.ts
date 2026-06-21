@@ -1,16 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
-/**
- * Prisma Client Singleton
- *
- * In development, Next.js/Node hot-reloads create a new module instance
- * on every save, which spawns a new PrismaClient and exhausts the
- * PostgreSQL connection pool. This pattern reuses a single instance.
- *
- * Architectural Decision: Global singleton prevents connection exhaustion.
- * The `global` cast is safe because this file only runs server-side.
- */
-
+// Reuse a single PrismaClient across hot reloads in development to avoid
+// exhausting the Postgres connection pool with duplicate instances.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

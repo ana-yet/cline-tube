@@ -3,13 +3,7 @@ import { env } from "../config/env";
 
 const isDev = env.NODE_ENV === "development";
 
-/**
- * Rate Limiting Configuration
- *
- * 1. apiLimiter (Global) — skipped in development; 500 req / 15 min in production
- * 2. authLimiter — login/register only; relaxed in development for local testing
- */
-
+// Global limiter is skipped in development; authLimiter guards login/register.
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 10_000 : 500,

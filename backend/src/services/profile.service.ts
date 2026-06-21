@@ -1,12 +1,6 @@
 import prisma from "../config/prisma";
 import { ApiError } from "../utils/errors";
 
-/**
- * Profile Service
- */
-
-// ── Get User Profile ──────────────────────────────────────
-
 export async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -44,7 +38,7 @@ export async function getProfile(userId: string) {
   return user;
 }
 
-// ── Update Profile ────────────────────────────────────────
+// Update Profile
 
 export async function updateProfile(
   userId: string,

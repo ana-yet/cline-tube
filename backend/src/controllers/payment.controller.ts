@@ -3,12 +3,7 @@ import * as paymentService from "../services/payment.service";
 import { sendSuccess } from "../utils/response";
 import { ApiError } from "../utils/errors";
 
-/**
- * Payment Controller
- */
-
-// ── POST /payments/checkout ───────────────────────────────
-
+// POST /payments/checkout
 export async function checkout(
   req: Request,
   res: Response,
@@ -34,8 +29,7 @@ export async function checkout(
   }
 }
 
-// ── GET /payments/subscription ─────────────────────────────
-
+// GET /payments/subscription
 export async function getSubscription(
   req: Request,
   res: Response,
@@ -49,8 +43,7 @@ export async function getSubscription(
   }
 }
 
-// ── POST /payments/cancel ─────────────────────────────────
-
+// POST /payments/cancel
 export async function cancel(
   req: Request,
   res: Response,

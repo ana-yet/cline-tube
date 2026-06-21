@@ -1,22 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodSchema, ZodError } from "zod";
 
-/**
- * Request Validation Middleware Factory
- *
- * Validates request body, query parameters, or route parameters against Zod schemas.
- *
- * Usage:
- *   router.post("/register", validate(registerSchema), controller.register);
- *   router.get("/media", validate(mediaQuerySchema, "query"), controller.list);
- *   router.get("/media/:slug", validate(mediaSlugSchema, "params"), controller.getBySlug);
- *
- * Architectural Decisions:
- * - Zod is used for both backend and frontend validation — single source of truth
- * - Validation errors return structured field-level messages for frontend form mapping
- * - The `source` parameter allows validating body, query, or params independently
- * - Strip unknown fields to prevent injection of unexpected data
- */
+// Validates body/query/params against a Zod schema and replaces the source with
+// the parsed value (stripping unknown fields). Errors become 400s with field detail.
 type ValidationSource = "body" | "query" | "params";
 
 export const validate = (
@@ -25,12 +11,7 @@ export const validate = (
 ) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const dataToValidate = req[source];
-      const parsed = schema.parse(dataToValidate);
-
-      // Replace with parsed data (strips unknown fields, applies defaults/coercions)
-      req[source] = parsed;
-
+      req[source] = schema.parse(req[source]);
       next();
     } catch (error) {
       if (error instanceof ZodError) {

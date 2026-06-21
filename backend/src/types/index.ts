@@ -1,17 +1,9 @@
 import { Role } from "@prisma/client";
 
-/**
- * Shared Type Definitions
- *
- * Centralized types used across the backend application.
- * Extends Express Request type to include authenticated user data.
- *
- * Architectural Decision: Types are co-located in a single file
- * rather than scattered across modules. This prevents circular
- * import issues and provides a single source of truth.
- */
+// Shared backend types kept in one place to avoid scattered definitions
+// and circular imports.
 
-// ── JWT Payload ───────────────────────────────────────────
+// JWT Payload
 export interface JwtPayload {
   sub: string; // User ID
   email: string;
@@ -20,13 +12,13 @@ export interface JwtPayload {
   exp?: number; // Expiry (auto-added by jwt.sign)
 }
 
-// ── Token Pair ────────────────────────────────────────────
+// Token Pair
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
 }
 
-// ── Authenticated User (attached to req.user) ─────────────
+// Authenticated User (attached to req.user)
 export interface AuthUser {
   id: string;
   email: string;
@@ -34,13 +26,13 @@ export interface AuthUser {
   role: Role | string;
 }
 
-// ── Pagination Query Parameters ───────────────────────────
+// Pagination Query Parameters
 export interface PaginationQuery {
   page?: number;
   limit?: number;
 }
 
-// ── Paginated Response ────────────────────────────────────
+// Paginated Response
 export interface PaginatedResponse<T> {
   items: T[];
   meta: {
@@ -51,7 +43,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// ── API Response Envelope ─────────────────────────────────
+// API Response Envelope
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;

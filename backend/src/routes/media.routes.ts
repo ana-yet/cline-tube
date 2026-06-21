@@ -27,7 +27,7 @@ import {
 
 const router = Router();
 
-// ── Admin Routes (must be before /:slug to avoid conflicts) ─
+// Admin Routes (must be before /:slug to avoid conflicts)
 
 router.post(
   "/",
@@ -63,7 +63,7 @@ router.delete(
   mediaController.remove,
 );
 
-// ── Public Routes ─────────────────────────────────────────
+// Public Routes
 
 router.get("/", validate(mediaQuerySchema, "query"), mediaController.list);
 

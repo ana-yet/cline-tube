@@ -3,19 +3,8 @@ import { randomBytes, createHash } from "crypto";
 import { env } from "../config/env";
 import { JwtPayload } from "../types";
 
-/**
- * JWT & Token Utility Functions
- *
- * Handles access token generation/verification and refresh token generation.
- *
- * Security Design:
- * - Access tokens are short-lived JWTs (15 min) signed with JWT_SECRET
- * - Refresh tokens are opaque 64-byte random hex strings (not UUIDs)
- * - Refresh tokens are SHA-256 hashed before database storage
- *   so a DB leak doesn't expose usable tokens
- * - The `sub` claim contains the user ID for token-to-user mapping
- */
-
+// Access tokens are short-lived JWTs. Refresh tokens are random opaque strings
+// that are SHA-256 hashed before storage so a database leak can't be replayed.
 export const generateAccessToken = (
   userId: string,
   email: string,
@@ -32,18 +21,10 @@ export const generateAccessToken = (
   });
 };
 
-/**
- * Generate a cryptographically secure random refresh token.
- * Returns 64 bytes of randomness as a hex string (128 chars).
- */
 export const generateRefreshToken = (): string => {
   return randomBytes(64).toString("hex");
 };
 
-/**
- * Hash a refresh token using SHA-256 for secure database storage.
- * The raw token is sent to the client; only the hash is stored in DB.
- */
 export const hashToken = (token: string): string => {
   return createHash("sha256").update(token).digest("hex");
 };

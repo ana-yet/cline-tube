@@ -12,22 +12,8 @@ import type {
   MediaQueryInput,
 } from "../validations/media.validation";
 
-/**
- * Media Service
- *
- * Contains all media business logic.
- * Controllers are thin wrappers that call these functions.
- *
- * Features:
- * - CRUD operations for media (movies/series)
- * - Automatic slug generation from title
- * - Genre management (many-to-many)
- * - View count tracking
- * - Search, filter, sort, pagination
- * - Admin publish/unpublish
- */
-
-// ── Helpers ───────────────────────────────────────────────
+// Media business logic: CRUD, slug generation, genre relations, view tracking,
+// premium gating, and list search/filter/sort/pagination.
 
 /**
  * Generate a URL-friendly slug from a title.
@@ -78,7 +64,7 @@ const mediaDetailSelect = {
   updatedAt: true,
 } as const;
 
-// ── Create Media (Admin) ──────────────────────────────────
+// Create Media (Admin)
 
 export async function createMedia(input: CreateMediaInput) {
   const { genreIds, ...mediaData } = input;
@@ -112,7 +98,7 @@ export async function createMedia(input: CreateMediaInput) {
   return media;
 }
 
-// ── Update Media (Admin) ──────────────────────────────────
+// Update Media (Admin)
 
 export async function updateMedia(id: string, input: UpdateMediaInput) {
   // Check media exists
@@ -202,7 +188,7 @@ export async function updateMedia(id: string, input: UpdateMediaInput) {
   return media;
 }
 
-// ── Delete Media (Admin) ──────────────────────────────────
+// Delete Media (Admin)
 
 export async function deleteMedia(id: string) {
   const existing = await prisma.media.findUnique({
@@ -225,7 +211,7 @@ export async function deleteMedia(id: string) {
   await prisma.media.delete({ where: { id } });
 }
 
-// ── Premium access helper ─────────────────────────────────
+// Premium access helper
 
 async function userHasPremiumAccess(
   userId?: string,
@@ -256,7 +242,7 @@ async function userHasPremiumAccess(
   );
 }
 
-// ── Get Media by Slug (Public — premium link gated) ───────
+// Get Media by Slug (Public — premium link gated)
 
 export async function getMediaBySlug(
   slug: string,
@@ -289,7 +275,7 @@ export async function getMediaBySlug(
   };
 }
 
-// ── Get Stream Link (Authenticated — premium enforced) ────
+// Get Stream Link (Authenticated — premium enforced)
 
 export async function getStreamLink(
   slug: string,
@@ -328,7 +314,7 @@ export async function getStreamLink(
   };
 }
 
-// ── View Count (deduplicated per IP+slug, 1-hour window) ──
+// View Count (deduplicated per IP+slug, 1-hour window)
 
 const recentViews = new Map<string, number>();
 const VIEW_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
@@ -368,7 +354,7 @@ export async function recordView(slug: string, ip: string | undefined) {
   });
 }
 
-// ── List Media (Public — with search/filter/sort/pagination) ──
+// List Media (Public — with search/filter/sort/pagination)
 
 export async function listMedia(query: MediaQueryInput) {
   const { page, limit, search, genre, year, type, pricingType, sortBy } = query;
@@ -445,7 +431,7 @@ export async function listMedia(query: MediaQueryInput) {
   };
 }
 
-// ── List All Genres (Public) ──────────────────────────────
+// List All Genres (Public)
 
 export async function listGenres() {
   const genres = await prisma.genre.findMany({
@@ -456,7 +442,7 @@ export async function listGenres() {
   return genres;
 }
 
-// ── Get Media by ID (Admin) ───────────────────────────────
+// Get Media by ID (Admin)
 
 export async function getMediaById(id: string) {
   const media = await prisma.media.findUnique({

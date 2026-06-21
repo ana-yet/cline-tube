@@ -7,7 +7,7 @@ import { z } from "zod";
  * Used by the `validate` middleware on media routes.
  */
 
-// ── Create Media ──────────────────────────────────────────
+// Create Media
 
 export const createMediaSchema = z.object({
   title: z
@@ -53,7 +53,7 @@ export const createMediaSchema = z.object({
     .max(10, "Maximum 10 genres"),
 });
 
-// ── Update Media ──────────────────────────────────────────
+// Update Media
 
 export const updateMediaSchema = z.object({
   title: z
@@ -90,7 +90,7 @@ export const updateMediaSchema = z.object({
     .optional(),
 });
 
-// ── Media Query Parameters ────────────────────────────────
+// Media Query Parameters
 
 export const mediaQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -105,7 +105,7 @@ export const mediaQuerySchema = z.object({
     .default("latest"),
 });
 
-// ── Type Exports ──────────────────────────────────────────
+// Type Exports
 
 export type CreateMediaInput = z.infer<typeof createMediaSchema>;
 export type UpdateMediaInput = z.infer<typeof updateMediaSchema>;
