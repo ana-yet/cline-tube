@@ -131,8 +131,8 @@ export default function HomePage() {
     queryKey: ["quick-media", selectedSlug],
     queryFn: async () => {
       if (!selectedSlug) return null;
-      const { data } = await apiClient.get<ApiResponse<Media>>(`/media/${selectedSlug}`);
-      return data.data;
+      const { data } = await apiClient.get<ApiResponse<{ media: Media }>>(`/media/${selectedSlug}`);
+      return data.data.media;
     },
     enabled: !!selectedSlug,
   });
