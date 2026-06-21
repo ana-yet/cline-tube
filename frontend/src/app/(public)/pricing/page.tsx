@@ -39,10 +39,11 @@ const FAQ_ITEMS = [
 ];
 
 export default function PricingPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const checkoutReady = !authLoading && isAuthenticated;
 
   // Handle success/cancel from Stripe redirect
   useEffect(() => {
@@ -62,16 +63,19 @@ export default function PricingPage() {
       >("/payments/subscription");
       return data.data.subscription;
     },
-    enabled: isAuthenticated,
+    enabled: checkoutReady,
   });
 
   const currentPlan = subscription?.tier || "FREE";
 
   const handleCheckout = async (plan: "MONTHLY" | "YEARLY") => {
+    if (authLoading) return;
+
     if (!isAuthenticated) {
       window.location.href = "/register";
       return;
     }
+
     setLoading(plan);
     try {
       const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
@@ -80,15 +84,22 @@ export default function PricingPage() {
       );
       if (data.data.url) {
         window.location.href = data.data.url;
+      } else {
+        setMessage("Checkout failed. Please try again.");
+        setLoading(null);
       }
     } catch (err: unknown) {
       const apiError = err as {
-        response?: { data?: { error?: { message?: string } } };
+        response?: { status?: number; data?: { error?: { message?: string } } };
       };
-      setMessage(
-        apiError.response?.data?.error?.message ||
-          "Checkout failed. Please try again.",
-      );
+      if (apiError.response?.status === 401) {
+        setMessage("Your session expired. Please sign in again to subscribe.");
+      } else {
+        setMessage(
+          apiError.response?.data?.error?.message ||
+            "Checkout failed. Please try again.",
+        );
+      }
       setLoading(null);
     }
   };
@@ -242,13 +253,19 @@ export default function PricingPage() {
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 shadow-lg hover:shadow-red-600/20 transition-all font-semibold"
                 onClick={() => handleCheckout("MONTHLY")}
-                disabled={loading === "MONTHLY" || currentPlan === "MONTHLY"}
+                disabled={
+                  authLoading ||
+                  loading === "MONTHLY" ||
+                  currentPlan === "MONTHLY"
+                }
               >
-                {currentPlan === "MONTHLY"
-                  ? "Current Plan"
-                  : loading === "MONTHLY"
-                    ? "Redirecting..."
-                    : "Subscribe Now"}
+                {authLoading
+                  ? "Loading..."
+                  : currentPlan === "MONTHLY"
+                    ? "Current Plan"
+                    : loading === "MONTHLY"
+                      ? "Redirecting..."
+                      : "Subscribe Now"}
               </Button>
             </div>
           </Card>
@@ -303,13 +320,19 @@ export default function PricingPage() {
               <Button
                 className="w-full bg-zinc-800 hover:bg-zinc-750 text-white rounded-xl h-11 border border-zinc-700/50"
                 onClick={() => handleCheckout("YEARLY")}
-                disabled={loading === "YEARLY" || currentPlan === "YEARLY"}
+                disabled={
+                  authLoading ||
+                  loading === "YEARLY" ||
+                  currentPlan === "YEARLY"
+                }
               >
-                {currentPlan === "YEARLY"
-                  ? "Current Plan"
-                  : loading === "YEARLY"
-                    ? "Redirecting..."
-                    : "Subscribe Now"}
+                {authLoading
+                  ? "Loading..."
+                  : currentPlan === "YEARLY"
+                    ? "Current Plan"
+                    : loading === "YEARLY"
+                      ? "Redirecting..."
+                      : "Subscribe Now"}
               </Button>
             </div>
           </Card>

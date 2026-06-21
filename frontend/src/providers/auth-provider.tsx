@@ -16,7 +16,10 @@ import type {
   AuthResponse,
 } from "@/types";
 import axios from "axios";
-import apiClient, { setAccessToken as setApiToken } from "@/lib/api";
+import apiClient, {
+  registerAuthSyncHandlers,
+  setAccessToken as setApiToken,
+} from "@/lib/api";
 import { clientEnv } from "@/config/env";
 import { useRouter } from "next/navigation";
 
@@ -34,10 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  /** Sync token to both React state and Axios module store */
+  /** Keep React state and the axios module token in sync */
   const setAccessToken = useCallback((token: string | null) => {
     setAccessTokenState(token);
     setApiToken(token);
+    if (!token) {
+      setUser(null);
+    }
   }, []);
 
   /** Keep access token in memory; refresh token stays in HttpOnly cookie */
@@ -52,14 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         { withCredentials: true },
       );
 
-      if (response.data.success) {
+      if (response.data.success && response.data.data.accessToken) {
         setAccessToken(response.data.data.accessToken);
         setUser(response.data.data.user);
+      } else {
+        setAccessToken(null);
       }
     } catch {
-      // No valid refresh cookie — user is not authenticated
       setAccessToken(null);
-      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
+
+  useEffect(() => {
+    registerAuthSyncHandlers({
+      onTokenRefreshed: (token) => setAccessToken(token),
+      onSessionCleared: () => setAccessToken(null),
+    });
+    return () => registerAuthSyncHandlers({});
+  }, [setAccessToken]);
 
   const login = async (data: LoginRequest) => {
     const response = await apiClient.post<{
@@ -98,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Logout endpoint may fail — still clear local state
     } finally {
       setAccessToken(null);
-      setUser(null);
       router.push("/login");
     }
   };
@@ -107,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!accessToken,
         isLoading,
         login,
         register,

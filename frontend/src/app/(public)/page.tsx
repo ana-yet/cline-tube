@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
 import type { ApiResponse, MediaSummary, Media } from "@/types";
+import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,8 +121,10 @@ const FAQ_ITEMS = [
 
 export default function HomePage() {
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeHero, setActiveHero] = useState(0);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   
   // Interactive Quick View modal state
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
@@ -159,9 +162,33 @@ export default function HomePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["watchlist"] });
-      // Update local quick view state to show updated state if necessary
     }
   });
+
+  const handleCheckout = async () => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      window.location.href = "/register";
+      return;
+    }
+
+    const plan = billingPeriod === "monthly" ? "MONTHLY" : "YEARLY";
+    setCheckoutLoading(true);
+    try {
+      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
+        "/payments/checkout",
+        { plan },
+      );
+      if (data.data.url) {
+        window.location.href = data.data.url;
+      }
+    } catch {
+      window.location.href = "/pricing";
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white overflow-hidden pb-12 relative">
@@ -491,11 +518,18 @@ export default function HomePage() {
                 </ul>
               </div>
               <div className="pt-6">
-                <Link href="/register" className="block w-full">
-                  <Button className="w-full bg-red-650 hover:bg-red-750 text-white rounded-xl h-11 text-xs shadow-lg shadow-red-950/20 font-semibold">
-                    Subscribe to CinePass
-                  </Button>
-                </Link>
+                <Button
+                  type="button"
+                  className="w-full bg-red-650 hover:bg-red-750 text-white rounded-xl h-11 text-xs shadow-lg shadow-red-950/20 font-semibold"
+                  onClick={handleCheckout}
+                  disabled={authLoading || checkoutLoading}
+                >
+                  {authLoading
+                    ? "Loading..."
+                    : checkoutLoading
+                      ? "Redirecting..."
+                      : "Subscribe to CinePass"}
+                </Button>
               </div>
             </Card>
 
@@ -530,7 +564,7 @@ export default function HomePage() {
                 </ul>
               </div>
               <div className="pt-8">
-                <Link href="/register" className="block w-full">
+                <Link href="/pricing" className="block w-full">
                   <Button className="w-full bg-zinc-850 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl h-11 text-xs">
                     Access Gold VIP
                   </Button>

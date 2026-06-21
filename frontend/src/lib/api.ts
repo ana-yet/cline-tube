@@ -3,6 +3,17 @@ import { clientEnv } from "@/config/env";
 
 let accessToken: string | null = null;
 
+type AuthSyncHandlers = {
+  onTokenRefreshed?: (token: string) => void;
+  onSessionCleared?: () => void;
+};
+
+let authSyncHandlers: AuthSyncHandlers = {};
+
+export function registerAuthSyncHandlers(handlers: AuthSyncHandlers) {
+  authSyncHandlers = handlers;
+}
+
 export function setAccessToken(token: string | null) {
   accessToken = token;
 }
@@ -72,21 +83,20 @@ apiClient.interceptors.response.use(
 
         if (data.success && data.data?.accessToken) {
           setAccessToken(data.data.accessToken);
+          authSyncHandlers.onTokenRefreshed?.(data.data.accessToken);
           processQueue(null);
           originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
           return apiClient(originalRequest);
         }
+
+        processQueue(error);
+        setAccessToken(null);
+        authSyncHandlers.onSessionCleared?.();
+        return Promise.reject(error);
       } catch (refreshError) {
         processQueue(refreshError);
         setAccessToken(null);
-
-        if (typeof window !== "undefined") {
-          const path = window.location.pathname;
-          const isAuthPage = path === "/login" || path === "/register";
-          if (!isAuthPage) {
-            window.location.href = "/login";
-          }
-        }
+        authSyncHandlers.onSessionCleared?.();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
