@@ -20,20 +20,6 @@ import apiClient, { setAccessToken as setApiToken } from "@/lib/api";
 import { clientEnv } from "@/config/env";
 import { useRouter } from "next/navigation";
 
-/**
- * Authentication Context
- *
- * Manages the global authentication state for the application.
- *
- * Security Design:
- * - Access token stored IN MEMORY ONLY (useState) — never localStorage
- * - Refresh token stored in HttpOnly cookie (set by backend, invisible to JS)
- * - On mount, attempts to restore session by calling /auth/refresh
- *   (uses the HttpOnly refresh cookie to get a new access token)
- * - Login/Register store the access token in memory and user data in state
- * - Logout clears memory state and calls backend to revoke refresh token
- */
-
 interface AuthContextType extends AuthState {
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
@@ -54,11 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setApiToken(token);
   }, []);
 
-  /**
-   * Restore session on mount.
-   * Uses raw axios to bypass the apiClient interceptor — prevents
-   * infinite redirect loop when no refresh cookie exists.
-   */
+  /** Keep access token in memory; refresh token stays in HttpOnly cookie */
   const restoreSession = useCallback(async () => {
     try {
       const response = await axios.post<{
@@ -139,9 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 /**
  * useAuth Hook
- *
- * Access the authentication context from any component.
- * Throws if used outside AuthProvider.
  */
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
