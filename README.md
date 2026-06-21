@@ -1,90 +1,84 @@
-# 🎬 CineTube — Movie & Series Rating & Streaming Portal
+# CineTube
 
-A full-stack web application for discovering, rating, and reviewing movies and series.
+Movie and series rating portal built with Next.js, Express, Prisma, and PostgreSQL.
 
-## Tech Stack
+## Live app
 
-| Layer    | Technology                                      |
-| -------- | ----------------------------------------------- |
-| Frontend | Next.js 16, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend  | Node.js, Express.js, Prisma ORM, PostgreSQL     |
-| Auth     | JWT + Refresh Token Rotation + RBAC             |
-| Payments | Stripe Subscriptions (FREE / MONTHLY / YEARLY)  |
+| | URL |
+|---|---|
+| Frontend | Deploy on Vercel (see below) |
+| Backend API | Deploy on Render — Express needs a long-running server |
 
-## Project Structure
+After deploy, set `NEXT_PUBLIC_API_URL` on Vercel to your Render API URL (e.g. `https://cinetube-api.onrender.com/api`).
 
-```
-cline-tube/
-├── backend/          # Express API server
-│   └── src/
-│       ├── config/   # Environment, Prisma, CORS
-│       ├── middlewares/ # Auth, validation, error handling
-│       ├── routes/   # API route registry
-│       ├── types/    # TypeScript type definitions
-│       └── utils/    # Errors, JWT, response helpers
-├── frontend/         # Next.js application
-│   └── src/
-│       ├── app/      # App Router pages & layouts
-│       ├── components/
-│       ├── hooks/    # TanStack Query hooks
-│       ├── lib/      # Axios, query client, validations
-│       ├── providers/# Auth, Query providers
-│       └── types/    # Shared TypeScript types
-└── prisma/           # Database schema & seed
-    ├── schema.prisma
-    └── seed.ts
-```
+## Admin login (after seed)
 
-## Getting Started
+- Email: `admin@cinetube.com`
+- Password: `Admin123!`
 
-### Prerequisites
-
-- Node.js 18+
-- PostgreSQL 14+
-- npm 9+
-
-### Installation
+## Local setup
 
 ```bash
-# Install root Prisma dependencies
 npm install
-
-# Install backend dependencies
-cd backend && npm install
-
-# Install frontend dependencies
+cd backend && npm install && npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed
 cd ../frontend && npm install
-
-# Set up environment variables
-cp .env.example .env           # Root — DATABASE_URL for Prisma
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env.local
-
-# Run database migrations
-cd backend && npm run prisma:migrate
-
-# Seed the database
-npm run prisma:seed
-
-# Start development servers
-npm run dev    # Backend on http://localhost:5000
-cd ../frontend && npm run dev  # Frontend on http://localhost:3000
 ```
 
-## Development Scripts
+Copy env files:
 
-### Backend
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+```
 
-| Command                 | Description                      |
-| ----------------------- | -------------------------------- |
-| `npm run dev`           | Start dev server with hot-reload |
-| `npm run build`         | Compile TypeScript               |
-| `npm run prisma:studio` | Open Prisma Studio GUI           |
+Run backend (`cd backend && npm run dev`) and frontend (`cd frontend && npm run dev`).
 
-### Frontend
+### Stripe webhooks (local)
 
-| Command         | Description              |
-| --------------- | ------------------------ |
-| `npm run dev`   | Start Next.js dev server |
-| `npm run build` | Production build         |
-| `npm run start` | Start production server  |
+```bash
+stripe listen --forward-to localhost:5000/api/webhooks/stripe
+```
+
+Put the `whsec_...` value in `backend/.env` as `STRIPE_WEBHOOK_SECRET`.
+
+## Deploy frontend on Vercel
+
+1. Push this repo to GitHub.
+2. Import the project at [vercel.com](https://vercel.com).
+3. Set **Root Directory** to `frontend`.
+4. Add env var: `NEXT_PUBLIC_API_URL` = your backend `/api` URL.
+5. Deploy.
+
+CLI option:
+
+```bash
+cd frontend
+npx vercel
+```
+
+## Deploy backend on Render
+
+Use the included `render.yaml` or create a web service with:
+
+- Root: `backend`
+- Build: `npm install && npm run build && npx prisma generate --schema=../prisma/schema.prisma`
+- Start: `node dist/server.js`
+
+Then run migrations against production:
+
+```bash
+cd backend
+npx prisma migrate deploy --schema=../prisma/schema.prisma
+```
+
+Add a Stripe webhook pointing to `https://YOUR-API.onrender.com/api/webhooks/stripe`.
+
+## Scripts
+
+**Backend:** `npm run dev`, `npm run build`, `npm run prisma:seed`  
+**Frontend:** `npm run dev`, `npm run build`
+
+## Stack
+
+Next.js, Express, Prisma, PostgreSQL, Stripe, Cloudinary, JWT auth
