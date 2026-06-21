@@ -19,7 +19,6 @@ After deploy, set `NEXT_PUBLIC_API_URL` on Vercel to your Render API URL (e.g. `
 ## Local setup
 
 ```bash
-npm install
 cd backend && npm install && npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed
 cd ../frontend && npm install
 ```
@@ -27,7 +26,6 @@ cd ../frontend && npm install
 Copy env files:
 
 ```bash
-cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 ```

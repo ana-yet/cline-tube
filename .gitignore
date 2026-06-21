@@ -17,6 +17,7 @@ out/
 .vscode/
 .idea/
 .cursor/
+AGENTS.md
 
 # Misc
 *.pem
