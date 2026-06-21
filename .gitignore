@@ -16,6 +16,10 @@ out/
 # IDE
 .vscode/
 .idea/
+.cursor/
+
+# Misc
+*.pem
 *.swp
 *.swo
 
@@ -31,11 +35,5 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 
-# Prisma
-prisma/migrations/
-
 # Testing
 coverage/
-
-# Misc
-*.pem
