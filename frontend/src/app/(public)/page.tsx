@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
@@ -63,7 +63,7 @@ const HERO_CAROUSEL = [
     genre: "Sci-Fi, Adventure, Drama",
     tagline: "Mankind was born on Earth. It was never meant to die here.",
     synopsis: "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjU1rPvgNd566hcj6q.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK1TVg7C.jpg",
     trailerUrl: "https://www.youtube.com/embed/zSWdZVtXT7E"
   },
   {
@@ -76,10 +76,14 @@ const HERO_CAROUSEL = [
     genre: "Crime, Drama, Thriller",
     tagline: "All Hail the King.",
     synopsis: "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine with a former student in order to secure his family's future.",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/tsRy63MuTJ5tPE7965IQ45G65E5.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
     trailerUrl: "https://www.youtube.com/embed/HhesaQXLuRY"
   }
 ];
+
+type HeroSlide = (typeof HERO_CAROUSEL)[number];
+
+type FeaturedMedia = MediaSummary & { backdropUrl: string | null };
 
 const EDITORS_PICKS = [
   {
@@ -143,13 +147,69 @@ export default function HomePage() {
   // Interactive Trailer Modal state
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
 
-  // Auto-cycle hero backdrops every 8 seconds
+  // Fetch featured titles for the hero carousel
+  const { data: featuredMedia } = useQuery({
+    queryKey: ["hero-featured"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiResponse<FeaturedMedia[]>>("/media", {
+        params: { sortBy: "top-rated", limit: 5 },
+      });
+      return data.data.filter((item) => item.backdropUrl);
+    },
+  });
+
+  const heroSlides = useMemo<HeroSlide[]>(() => {
+    if (featuredMedia?.length) {
+      return featuredMedia.map((item) => {
+        const meta = HERO_CAROUSEL.find((slide) => slide.slug === item.slug);
+        return {
+          id: item.id,
+          title: item.title,
+          slug: item.slug,
+          rating: Number(item.averageRating).toFixed(1),
+          releaseYear: item.releaseYear,
+          duration:
+            meta?.duration ?? (item.type === "SERIES" ? "Series" : "Feature"),
+          genre: item.genres.map((g) => g.genre.name).join(", "),
+          tagline: meta?.tagline ?? item.title,
+          synopsis:
+            meta?.synopsis ??
+            `Stream, rate, and review ${item.title} on CineTube.`,
+          backdropUrl: item.backdropUrl!,
+          trailerUrl: meta?.trailerUrl ?? "",
+        };
+      });
+    }
+    return HERO_CAROUSEL;
+  }, [featuredMedia]);
+
+  const slideCount = heroSlides.length;
+  const currentSlide = heroSlides[activeHero] ?? heroSlides[0];
+
+  const goToSlide = useCallback(
+    (index: number) => {
+      if (slideCount === 0) return;
+      setActiveHero((index + slideCount) % slideCount);
+    },
+    [slideCount],
+  );
+
+  // Auto-cycle hero backdrops
   useEffect(() => {
+    if (slideCount <= 1) return;
+
     const timer = setInterval(() => {
-      setActiveHero((prev) => (prev + 1) % HERO_CAROUSEL.length);
+      setActiveHero((prev) => (prev + 1) % slideCount);
     }, 8500);
+
     return () => clearInterval(timer);
-  }, []);
+  }, [slideCount]);
+
+  useEffect(() => {
+    if (activeHero >= slideCount && slideCount > 0) {
+      setActiveHero(0);
+    }
+  }, [activeHero, slideCount]);
 
   // Quick Watchlist Toggle mutation for the Quick View card
   const watchlistMutation = useMutation({
@@ -196,30 +256,29 @@ export default function HomePage() {
       <div className="absolute top-0 left-1/4 w-[600px] h-[450px] rounded-full bg-red-900/10 blur-[140px] pointer-events-none -z-10" />
       <div className="absolute top-1/3 right-1/4 w-[500px] h-[400px] rounded-full bg-amber-900/5 blur-[120px] pointer-events-none -z-10" />
 
-      {/* HERO HERO SECTION WITH INTERACTIVE CAROUSEL */}
+      {/* HERO SECTION WITH CAROUSEL */}
       <section className="relative h-[85vh] min-h-[650px] flex items-center justify-start overflow-hidden border-b border-zinc-900">
-        {/* Dynamic backdrop slider */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeHero}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 0.45, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2 }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${HERO_CAROUSEL[activeHero].backdropUrl})` }}
+        {/* Stacked backdrop crossfade — all slides stay mounted so images preload */}
+        {heroSlides.map((slide, idx) => (
+          <div
+            key={slide.id}
+            aria-hidden={idx !== activeHero}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              idx === activeHero ? "opacity-45" : "opacity-0"
+            }`}
+            style={{ backgroundImage: `url(${slide.backdropUrl})` }}
           />
-        </AnimatePresence>
+        ))}
 
         {/* Cinematic Vignettes */}
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/70 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/50 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/70 to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/50 z-10 pointer-events-none" />
 
         <div className="container mx-auto px-4 relative z-20 w-full">
           <div className="max-w-2xl space-y-6">
             {/* Tagline / Badge */}
             <motion.div
-              key={`badge-${activeHero}`}
+              key={`badge-${currentSlide.id}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -230,63 +289,65 @@ export default function HomePage() {
               <span className="text-zinc-600">&bull;</span>
               <span className="text-amber-400 flex items-center gap-0.5">
                 <Star className="h-3 w-3 fill-amber-400" />
-                {HERO_CAROUSEL[activeHero].rating}
+                {currentSlide.rating}
               </span>
             </motion.div>
 
             {/* Title */}
             <motion.h1
-              key={`title-${activeHero}`}
+              key={`title-${currentSlide.id}`}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none text-white drop-shadow-md"
             >
-              {HERO_CAROUSEL[activeHero].title}
+              {currentSlide.title}
             </motion.h1>
 
             {/* Movie Meta */}
             <motion.div
-              key={`meta-${activeHero}`}
+              key={`meta-${currentSlide.id}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
               className="flex flex-wrap items-center gap-3.5 text-xs text-zinc-400 font-medium"
             >
-              <span>{HERO_CAROUSEL[activeHero].releaseYear}</span>
+              <span>{currentSlide.releaseYear}</span>
               <span className="text-zinc-700">&bull;</span>
-              <span>{HERO_CAROUSEL[activeHero].duration}</span>
+              <span>{currentSlide.duration}</span>
               <span className="text-zinc-700">&bull;</span>
-              <span className="text-zinc-300">{HERO_CAROUSEL[activeHero].genre}</span>
+              <span className="text-zinc-300">{currentSlide.genre}</span>
             </motion.div>
 
             {/* Synopsis */}
             <motion.p
-              key={`synopsis-${activeHero}`}
+              key={`synopsis-${currentSlide.id}`}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-sm sm:text-base text-zinc-300 leading-relaxed font-light drop-shadow-sm max-w-xl"
             >
-              {HERO_CAROUSEL[activeHero].synopsis}
+              {currentSlide.synopsis}
             </motion.p>
 
             {/* Actions */}
             <motion.div
-              key={`actions-${activeHero}`}
+              key={`actions-${currentSlide.id}`}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
               className="flex flex-wrap items-center gap-4 pt-2"
             >
-              <Button
-                onClick={() => setTrailerUrl(HERO_CAROUSEL[activeHero].trailerUrl)}
-                className="bg-red-650 hover:bg-red-700 text-white font-semibold px-6 h-12 rounded-xl shadow-lg shadow-red-950/20 gap-2 text-sm transition-all"
-              >
-                <Play className="h-4 w-4 fill-white" />
-                <span>Watch Trailer</span>
-              </Button>
-              <Link href={`/browse/${HERO_CAROUSEL[activeHero].slug}`}>
+              {currentSlide.trailerUrl ? (
+                <Button
+                  onClick={() => setTrailerUrl(currentSlide.trailerUrl)}
+                  className="bg-red-650 hover:bg-red-700 text-white font-semibold px-6 h-12 rounded-xl shadow-lg shadow-red-950/20 gap-2 text-sm transition-all"
+                >
+                  <Play className="h-4 w-4 fill-white" />
+                  <span>Watch Trailer</span>
+                </Button>
+              ) : null}
+              <Link href={`/browse/${currentSlide.slug}`}>
                 <Button
                   variant="outline"
                   className="border-zinc-800 hover:border-zinc-700 bg-zinc-900/40 hover:bg-zinc-900/80 text-zinc-200 hover:text-white px-5 h-12 rounded-xl transition-all gap-2 text-sm"
@@ -299,16 +360,39 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Carousel controls */}
+        {slideCount > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => goToSlide(activeHero - 1)}
+              className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-zinc-800 bg-zinc-950/70 p-2.5 text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSlide(activeHero + 1)}
+              className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-zinc-800 bg-zinc-950/70 p-2.5 text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
+
         {/* Carousel indicators */}
         <div className="absolute bottom-8 right-8 z-20 flex items-center gap-3">
-          {HERO_CAROUSEL.map((item, idx) => (
+          {heroSlides.map((item, idx) => (
             <button
               key={item.id}
-              onClick={() => setActiveHero(idx)}
+              type="button"
+              onClick={() => goToSlide(idx)}
               className={`h-2.5 rounded-full transition-all duration-300 ${
                 idx === activeHero ? "w-8 bg-red-500" : "w-2.5 bg-zinc-800 hover:bg-zinc-650"
               }`}
-              title={`Slide ${idx + 1}`}
+              aria-label={`Show ${item.title}`}
             />
           ))}
         </div>
