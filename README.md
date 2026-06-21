@@ -62,7 +62,7 @@ npx vercel
 Use the included `render.yaml` or create a web service with:
 
 - Root: `backend`
-- Build: `npm install && npm run build && npx prisma generate --schema=../prisma/schema.prisma`
+- Build: `npm install --include=dev && npx prisma generate --schema=../prisma/schema.prisma && npm run build`
 - Start: `node dist/server.js`
 
 Then run migrations against production:

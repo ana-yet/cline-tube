@@ -3,7 +3,7 @@ services:
     name: cinetube-api
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build && npx prisma generate --schema=../prisma/schema.prisma
+    buildCommand: npm install --include=dev && npx prisma generate --schema=../prisma/schema.prisma && npm run build
     startCommand: node dist/server.js
     healthCheckPath: /api/health
     envVars:
