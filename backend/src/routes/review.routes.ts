@@ -8,6 +8,8 @@ import {
   updateReviewSchema,
   reviewQuerySchema,
 } from "../validations/review.validation";
+import { createCommentSchema } from "../validations/comment.validation";
+import * as commentController from "../controllers/comment.controller";
 
 /**
  * Review Routes
@@ -61,6 +63,21 @@ router.get(
   authenticate,
   validate(reviewQuerySchema, "query"),
   reviewController.getMine,
+);
+
+router.get("/:id/comments", commentController.list);
+
+router.post(
+  "/:id/comments",
+  authenticate,
+  validate(createCommentSchema),
+  commentController.create,
+);
+
+router.delete(
+  "/:id/comments/:commentId",
+  authenticate,
+  commentController.remove,
 );
 
 router.post("/:id/like", authenticate, reviewController.toggleLike);
