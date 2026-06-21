@@ -360,7 +360,7 @@ const MEDIA: MediaSeed[] = [
 // ── Seed Functions ────────────────────────────────────────
 
 async function seedGenres(): Promise<Map<string, string>> {
-  console.log("🌱 Seeding genres...");
+  console.log("Seeding genres...");
 
   const genreMap = new Map<string, string>();
 
@@ -373,12 +373,12 @@ async function seedGenres(): Promise<Map<string, string>> {
     genreMap.set(name, genre.id);
   }
 
-  console.log(`   ✅ ${GENRES.length} genres`);
+  console.log(`Seeded ${GENRES.length} genres`);
   return genreMap;
 }
 
 async function seedAdmin() {
-  console.log("🌱 Seeding admin user...");
+  console.log("Seeding admin user...");
 
   const email = "admin@cinetube.com";
   const password = "Admin123!";
@@ -402,11 +402,11 @@ async function seedAdmin() {
     },
   });
 
-  console.log(`   ✅ Admin: ${email} / ${password}`);
+  console.log(`Admin: ${email} / ${password}`);
 }
 
 async function seedMedia(genreMap: Map<string, string>) {
-  console.log("🌱 Seeding media...");
+  console.log("Seeding media...");
 
   let created = 0;
 
@@ -455,13 +455,13 @@ async function seedMedia(genreMap: Map<string, string>) {
     });
   }
 
-  console.log(`   ✅ ${MEDIA.length} media (${created} created, ${MEDIA.length - created} updated)`);
+  console.log(`Seeded ${MEDIA.length} media items`);
 }
 
 // ── Main ──────────────────────────────────────────────────
 
 async function main() {
-  console.log("🚀 CineTube Database Seed\n");
+  console.log("CineTube database seed\n");
 
   const genreMap = await seedGenres();
   await seedAdmin();
@@ -471,16 +471,16 @@ async function main() {
   const totalUsers = await prisma.user.count();
   const totalGenres = await prisma.genre.count();
 
-  console.log("\n📊 Database Summary:");
-  console.log(`   Genres: ${totalGenres}`);
-  console.log(`   Users:  ${totalUsers}`);
-  console.log(`   Media:  ${totalMedia}`);
-  console.log("\n✨ Seed completed successfully!");
+  console.log("Summary:");
+  console.log(`  genres: ${totalGenres}`);
+  console.log(`  users:  ${totalUsers}`);
+  console.log(`  media:  ${totalMedia}`);
+  console.log("Seed complete.");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed failed:", e);
+    console.error("Seed failed:", e);
     process.exit(1);
   })
   .finally(async () => {
