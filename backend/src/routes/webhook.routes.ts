@@ -8,7 +8,7 @@ import { handleWebhook } from "../controllers/stripe-webhook.controller";
  * POST /webhooks/stripe — Receive Stripe webhook events
  *
  * IMPORTANT: Uses raw body parser (not JSON) for signature verification.
- * Must be registered BEFORE express.json() middleware.
+ * Mounted in app.ts at /api/webhooks BEFORE express.json().
  */
 
 const router = Router();
