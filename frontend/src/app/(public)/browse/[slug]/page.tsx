@@ -29,9 +29,10 @@ import {
   Plus,
   Calendar,
   Eye,
-  Users,
   Film,
   ArrowLeft,
+  Lock,
+  MessageSquare,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -253,27 +254,49 @@ export default function MediaDetailPage({
     );
   }
 
-  return (
-    <main className="bg-zinc-950 min-h-screen text-white pb-20">
-      {/* Banner / Backdrop Header */}
-      <div className="relative w-full h-[55vh] min-h-[350px] md:h-[65vh] overflow-hidden">
-        {media.backdropUrl ? (
-          <img
-            src={media.backdropUrl}
-            alt={media.title}
-            className="w-full h-full object-cover scale-105"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-zinc-950 to-zinc-900" />
-        )}
-        {/* Dynamic vignette gradients to blend in poster and information overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-transparent to-zinc-950/20" />
+  const ratingValue = Number(media.averageRating) || 0;
 
-        <div className="absolute bottom-0 left-0 right-0 py-8 z-10">
-          <div className="container mx-auto px-4 flex items-end gap-6 md:gap-8">
-            {/* Floating Poster Overlay */}
-            <div className="hidden md:block w-[240px] aspect-[2/3] shrink-0 rounded-2xl overflow-hidden bg-zinc-900 border-2 border-zinc-800 shadow-2xl shadow-black/80 translate-y-16">
+  return (
+    <main className="bg-zinc-950 min-h-screen text-white pb-24">
+      {/* Immersive hero */}
+      <section className="relative isolate">
+        <div className="absolute inset-0 h-[78vh] min-h-[520px] overflow-hidden">
+          {media.backdropUrl ? (
+            <img
+              src={media.backdropUrl}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : media.posterUrl ? (
+            <img
+              src={media.posterUrl}
+              alt=""
+              className="w-full h-full object-cover blur-2xl scale-110 opacity-40"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-950" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-zinc-950/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/95 via-zinc-950/50 to-transparent" />
+        </div>
+
+        <div className="relative container mx-auto px-4 pt-8">
+          <Link
+            href="/browse"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-300 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Catalog</span>
+          </Link>
+
+          <div className="mt-[24vh] md:mt-[30vh] flex flex-col md:flex-row gap-7 md:gap-10 items-center md:items-end">
+            {/* Poster */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="relative w-[180px] md:w-[260px] aspect-[2/3] shrink-0 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl shadow-black/70"
+            >
               {media.posterUrl ? (
                 <img
                   src={media.posterUrl}
@@ -281,81 +304,141 @@ export default function MediaDetailPage({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl bg-zinc-900">
-                  🎬
+                <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                  <Film className="h-10 w-10 text-zinc-700" />
                 </div>
               )}
-            </div>
+              {media.accessRestricted && (
+                <div className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-300 border border-amber-500/30">
+                  <Lock className="h-3 w-3" />
+                  Premium
+                </div>
+              )}
+            </motion.div>
 
-            {/* Media Information */}
-            <div className="space-y-4 max-w-3xl flex-1">
-              <Link
-                href="/browse"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors mb-2"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to Catalog</span>
-              </Link>
+            {/* Title + meta + actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.08 }}
+              className="flex-1 space-y-5 text-center md:text-left"
+            >
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                  {media.title}
+                </h1>
 
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-none">
-                {media.title}
-              </h1>
-
-              <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm pt-1">
-                <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/10 font-semibold uppercase tracking-wider text-[10px]">
-                  {media.type}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="border-zinc-800 text-zinc-400 bg-zinc-900/30"
-                >
-                  <Calendar className="h-3.5 w-3.5 text-zinc-500 mr-1 inline" />
-                  {media.releaseYear}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="border-zinc-800 text-zinc-400 bg-zinc-900/30 uppercase tracking-wider text-[10px]"
-                >
-                  {media.pricingType}
-                </Badge>
-                {media.genres.map((g) => (
-                  <Badge
-                    key={g.genre.id}
-                    className="bg-zinc-900 border-zinc-800 text-zinc-300 font-normal hover:bg-zinc-850"
-                  >
-                    {g.genre.name}
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                  <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/10 font-semibold uppercase tracking-wider text-[10px]">
+                    {media.type}
                   </Badge>
-                ))}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900/70 border border-zinc-800 px-3 py-1 text-xs font-semibold text-amber-300">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    {ratingValue ? ratingValue.toFixed(1) : "N/A"}
+                    <span className="text-zinc-500 font-normal">/10</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900/70 border border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-300">
+                    <Calendar className="h-3.5 w-3.5 text-zinc-500" />
+                    {media.releaseYear}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900/70 border border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-300">
+                    <Eye className="h-3.5 w-3.5 text-zinc-500" />
+                    {media.viewCount}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900/70 border border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-300">
+                    <MessageSquare className="h-3.5 w-3.5 text-zinc-500" />
+                    {media.reviewsCount}
+                  </span>
+                </div>
+
+                {media.genres.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
+                    {media.genres.map((g) => (
+                      <Badge
+                        key={g.genre.id}
+                        className="bg-zinc-900 border-zinc-800 text-zinc-300 font-normal hover:bg-zinc-800"
+                      >
+                        {g.genre.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Stats */}
-              <div className="flex items-center gap-6 text-sm text-zinc-400 pt-1">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span className="font-bold text-white text-base">
-                    {media.averageRating || "N/A"}
-                  </span>
-                  <span className="text-xs text-zinc-500">/10</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4 text-zinc-500" />
-                  <span className="font-semibold text-zinc-300">
-                    {media.reviewsCount} reviews
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Eye className="h-4 w-4 text-zinc-500" />
-                  <span className="font-semibold text-zinc-300">
-                    {media.viewCount} views
-                  </span>
-                </div>
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3 pt-1">
+                {media.accessRestricted ? (
+                  isAuthenticated ? (
+                    <Link href={buildPricingHref(`/browse/${slug}`)}>
+                      <Button
+                        size="lg"
+                        className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl h-12 px-7 text-sm font-semibold gap-2"
+                      >
+                        <Lock className="h-4 w-4" />
+                        Upgrade to Premium
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href={`/login?redirect=/browse/${slug}`}>
+                      <Button
+                        size="lg"
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-12 px-7 text-sm font-semibold gap-2"
+                      >
+                        <Play className="h-4 w-4 fill-white" />
+                        Sign in to Watch
+                      </Button>
+                    </Link>
+                  )
+                ) : media.streamingLink ? (
+                  <a
+                    href={media.streamingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg hover:shadow-red-600/25 transition-all font-semibold gap-2 h-12 px-7 text-sm"
+                    >
+                      <Play className="h-4 w-4 fill-white" />
+                      Watch Now
+                    </Button>
+                  </a>
+                ) : null}
+
+                {isAuthenticated && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => toggleWatchlist.mutate()}
+                    disabled={toggleWatchlist.isPending}
+                    className={`rounded-xl border-zinc-800 hover:bg-zinc-900 hover:text-white font-semibold transition-all h-12 px-6 text-sm gap-2 ${
+                      isInWatchlist
+                        ? "border-emerald-500/20 bg-emerald-950/15 text-emerald-400 hover:bg-emerald-950/25 hover:text-emerald-300"
+                        : "bg-zinc-900/60"
+                    }`}
+                  >
+                    {toggleWatchlist.isPending ? (
+                      "Syncing..."
+                    ) : isInWatchlist ? (
+                      <>
+                        <Check className="h-4 w-4 text-emerald-400" />
+                        In Watchlist
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Add to Watchlist
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="container mx-auto px-4 mt-8 md:mt-24">
+      <div className="container mx-auto px-4 mt-10">
         {premiumUnlocked && (
           <Alert className="mb-6 border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
             <AlertDescription className="flex items-center gap-2">
@@ -376,147 +459,34 @@ export default function MediaDetailPage({
             </Alert>
           )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 md:gap-12">
-          {/* Left Column: Mobile Poster & CTA buttons */}
-          <div className="space-y-4">
-            {/* Mobile Poster */}
-            <div className="md:hidden w-full max-w-[200px] mx-auto aspect-[2/3] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-xl">
-              {media.posterUrl ? (
-                <img
-                  src={media.posterUrl}
-                  alt={media.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl bg-zinc-900">
-                  🎬
-                </div>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex flex-col gap-2.5 max-w-[300px] mx-auto md:max-w-none">
-              {media.accessRestricted ? (
-                isAuthenticated ? (
-                  <Link href={buildPricingHref(`/browse/${slug}`)} className="w-full">
-                    <Button
-                      size="lg"
-                      className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl h-12 text-sm font-semibold"
-                    >
-                      Upgrade to Premium
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href={`/login?redirect=/browse/${slug}`} className="w-full">
-                    <Button
-                      size="lg"
-                      className="w-full bg-red-650 hover:bg-red-700 text-white rounded-xl h-12 text-sm font-semibold gap-2"
-                    >
-                      <Play className="h-4 w-4 fill-white" />
-                      <span>Sign in to Watch</span>
-                    </Button>
-                  </Link>
-                )
-              ) : media.streamingLink ? (
-                <a
-                  href={media.streamingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full"
-                >
-                  <Button
-                    size="lg"
-                    className="w-full bg-red-650 hover:bg-red-700 text-white rounded-xl shadow-lg hover:shadow-red-600/20 transition-all font-semibold gap-2 h-12 text-sm"
-                  >
-                    <Play className="h-4 w-4 fill-white" />
-                    <span>Watch Now</span>
-                  </Button>
-                </a>
-              ) : null}
-
-              {isAuthenticated && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => toggleWatchlist.mutate()}
-                  disabled={toggleWatchlist.isPending}
-                  className={`w-full rounded-xl border-zinc-850 hover:bg-zinc-900 hover:text-white font-semibold transition-all h-12 text-sm gap-2 ${
-                    isInWatchlist
-                      ? "border-emerald-500/20 bg-emerald-950/15 text-emerald-400 hover:bg-emerald-950/25 hover:text-emerald-300"
-                      : "bg-zinc-900/60"
-                  }`}
-                >
-                  {toggleWatchlist.isPending ? (
-                    "Syncing..."
-                  ) : isInWatchlist ? (
-                    <>
-                      <Check className="h-4.5 w-4.5 text-emerald-400" />
-                      <span>In Watchlist</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4.5 w-4.5" />
-                      <span>Add to Watchlist</span>
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: Synopsis, Director, Cast, Reviews */}
-          <div className="space-y-10">
-            {/* Description */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold uppercase tracking-wider text-zinc-400">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
+          {/* Main column: synopsis + reviews */}
+          <div className="lg:col-span-2 space-y-10">
+            <section className="space-y-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
                 Synopsis
               </h2>
-              <p className="text-zinc-300 text-sm md:text-base leading-relaxed font-light">
+              <p className="text-zinc-300 text-sm md:text-base leading-relaxed">
                 {media.synopsis}
               </p>
-            </div>
+            </section>
 
-            {/* Crew Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">
-                  Director
-                </h3>
-                <p className="text-zinc-200 text-sm font-semibold">
-                  {media.director}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">
-                  Cast
-                </h3>
-                <p className="text-zinc-200 text-sm font-light leading-relaxed">
-                  {media.cast.join(", ")}
-                </p>
-              </div>
-            </div>
+            <Separator className="bg-zinc-900" />
 
-            {/* Reviews list header */}
-            <div className="space-y-6 pt-4 border-t border-zinc-900">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                  <span>User Reviews</span>
-                  <Badge
-                    variant="secondary"
-                    className="bg-zinc-900 border-zinc-800 text-zinc-400 text-xs"
-                  >
-                    {reviews.length}
-                  </Badge>
-                </h2>
-              </div>
+            <section className="space-y-6">
+              <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span>User Reviews</span>
+                <Badge
+                  variant="secondary"
+                  className="bg-zinc-900 border-zinc-800 text-zinc-400 text-xs"
+                >
+                  {reviews.length}
+                </Badge>
+              </h2>
 
-              {/* Review form or status */}
               {isAuthenticated && !myReview && (
                 <div className="rounded-2xl border border-zinc-900 bg-zinc-900/30 p-6">
-                  <ReviewForm
-                    mediaId={media.id}
-                    onSuccess={invalidateMyReview}
-                  />
+                  <ReviewForm mediaId={media.id} onSuccess={invalidateMyReview} />
                 </div>
               )}
 
@@ -528,7 +498,6 @@ export default function MediaDetailPage({
                 />
               )}
 
-              {/* Sign in reminder to submit review */}
               {!isAuthenticated && (
                 <Card className="bg-zinc-900/30 border-zinc-900 rounded-2xl overflow-hidden">
                   <CardContent className="py-8 text-center space-y-4">
@@ -536,7 +505,7 @@ export default function MediaDetailPage({
                       Sign in to CineTube to write a review and rate this title.
                     </p>
                     <Link href={`/login?redirect=/browse/${slug}`}>
-                      <Button className="bg-red-650 hover:bg-red-700 text-white font-medium rounded-lg text-xs px-6">
+                      <Button className="bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-xs px-6">
                         Sign In
                       </Button>
                     </Link>
@@ -544,12 +513,64 @@ export default function MediaDetailPage({
                 </Card>
               )}
 
-              {/* Reviews List */}
               <div className="space-y-4">
                 <ReviewList reviews={reviews} mediaId={media.id} />
               </div>
-            </div>
+            </section>
           </div>
+
+          {/* Aside: title details */}
+          <aside className="lg:sticky lg:top-24 h-fit">
+            <div className="rounded-2xl border border-zinc-900 bg-zinc-900/30 p-6 space-y-5">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
+                Details
+              </h2>
+              <dl className="space-y-4 text-sm">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Director
+                  </dt>
+                  <dd className="text-zinc-200 mt-0.5">{media.director}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Cast
+                  </dt>
+                  <dd className="text-zinc-300 mt-0.5 leading-relaxed">
+                    {media.cast.join(", ")}
+                  </dd>
+                </div>
+                <Separator className="bg-zinc-900" />
+                <div className="flex items-center justify-between">
+                  <dt className="text-zinc-500">Type</dt>
+                  <dd className="text-zinc-200 font-medium">{media.type}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-zinc-500">Released</dt>
+                  <dd className="text-zinc-200 font-medium">
+                    {media.releaseYear}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-zinc-500">Access</dt>
+                  <dd className="text-zinc-200 font-medium">
+                    {media.pricingType}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-zinc-500">Rating</dt>
+                  <dd className="text-zinc-200 font-medium inline-flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    {ratingValue ? `${ratingValue.toFixed(1)} / 10` : "N/A"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-zinc-500">Views</dt>
+                  <dd className="text-zinc-200 font-medium">{media.viewCount}</dd>
+                </div>
+              </dl>
+            </div>
+          </aside>
         </div>
       </div>
     </main>
