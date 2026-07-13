@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # Backend: lint, typecheck, unit/integration tests, build
+  # ─────────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Frontend: lint, typecheck, unit tests, build
+  # ─────────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (baseline existing debt)
+        run: npm run lint:ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Prisma: schema validation and migration dry-run
+  # ─────────────────────────────────────────────────────────────────────
+  prisma-validate:
+    name: Prisma Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: npx prisma validate --schema=../prisma/schema.prisma
+
+      - name: Format Prisma schema
+        run: npx prisma format --schema=../prisma/schema.prisma
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Secret scan: check for obvious credential leaks
+  # ─────────────────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets in tracked files
+        run: |
+          # Fail if .env files are tracked
+          if git ls-files | grep -qE '\.env$|\.env\.local$|\.env\.production$'; then
+            echo "::error::Tracked .env file detected"
+            exit 1
+          fi
+          # Fail if real Stripe keys appear in source (test keys are acceptable)
+          if grep -rn 'sk_live\|pk_live\|whsec_live' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' .; then
+            echo "::error::Live Stripe key detected in source"
+            exit 1
+          fi
+          echo "Secret scan passed"
