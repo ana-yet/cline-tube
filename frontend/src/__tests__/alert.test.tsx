@@ -22,7 +22,7 @@ describe("Alert", () => {
   it("renders children text", () => {
     render(<Alert>Password recovery is temporarily unavailable.</Alert>);
     expect(
-      screen.getByText("Password recovery is temporarily unavailable.")
+      screen.getByText("Password recovery is temporarily unavailable."),
     ).toBeInTheDocument();
   });
 
@@ -30,7 +30,7 @@ describe("Alert", () => {
     render(
       <Alert>
         <AlertDescription>Something went wrong.</AlertDescription>
-      </Alert>
+      </Alert>,
     );
     expect(screen.getByText("Something went wrong.")).toBeInTheDocument();
   });

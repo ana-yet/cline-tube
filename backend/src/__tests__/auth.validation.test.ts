@@ -44,12 +44,18 @@ describe("registerSchema", () => {
   });
 
   it("rejects invalid email", () => {
-    const result = registerSchema.safeParse({ ...validInput, email: "not-an-email" });
+    const result = registerSchema.safeParse({
+      ...validInput,
+      email: "not-an-email",
+    });
     expect(result.success).toBe(false);
   });
 
   it("rejects password shorter than 8 characters", () => {
-    const result = registerSchema.safeParse({ ...validInput, password: "Sh0rt" });
+    const result = registerSchema.safeParse({
+      ...validInput,
+      password: "Sh0rt",
+    });
     expect(result.success).toBe(false);
   });
 
@@ -107,7 +113,9 @@ describe("loginSchema", () => {
 
 describe("forgotPasswordSchema", () => {
   it("accepts valid email", () => {
-    const result = forgotPasswordSchema.safeParse({ email: "user@example.com" });
+    const result = forgotPasswordSchema.safeParse({
+      email: "user@example.com",
+    });
     expect(result.success).toBe(true);
   });
 

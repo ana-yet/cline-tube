@@ -18,11 +18,8 @@ process.env.STRIPE_SECRET_KEY =
   process.env.STRIPE_SECRET_KEY || "sk_test_placeholder";
 process.env.STRIPE_WEBHOOK_SECRET =
   process.env.STRIPE_WEBHOOK_SECRET || "whsec_test_placeholder";
-process.env.FRONTEND_URL =
-  process.env.FRONTEND_URL || "http://localhost:3000";
-process.env.CLOUDINARY_CLOUD_NAME =
-  process.env.CLOUDINARY_CLOUD_NAME || "test";
-process.env.CLOUDINARY_API_KEY =
-  process.env.CLOUDINARY_API_KEY || "123456789";
+process.env.FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+process.env.CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "test";
+process.env.CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "123456789";
 process.env.CLOUDINARY_API_SECRET =
   process.env.CLOUDINARY_API_SECRET || "test_cloudinary_secret";

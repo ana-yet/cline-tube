@@ -12,7 +12,9 @@ import { z } from "zod";
 // Re-create the env schema shape from config/env.ts for testing.
 // This avoids importing the module that calls process.exit(1).
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
   PORT: z.coerce.number().default(5000),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
@@ -65,7 +67,10 @@ describe("env schema validation", () => {
   });
 
   it("rejects invalid FRONTEND_URL", () => {
-    const result = envSchema.safeParse({ ...validEnv, FRONTEND_URL: "not-a-url" });
+    const result = envSchema.safeParse({
+      ...validEnv,
+      FRONTEND_URL: "not-a-url",
+    });
     expect(result.success).toBe(false);
   });
 });
