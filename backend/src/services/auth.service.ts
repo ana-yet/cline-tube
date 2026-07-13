@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
 import prisma from "../config/prisma";
 import { env } from "../config/env";
 import { ApiError } from "../utils/errors";
@@ -11,11 +10,10 @@ import {
 import type { RegisterInput, LoginInput } from "../validations/auth.validation";
 
 // Authentication logic: bcrypt password hashing, rotating refresh tokens
-// (hashed in the DB and revoked on use), and single-use password reset tokens.
+// (hashed in the DB and revoked on use), and password reset containment.
 
 const BCRYPT_SALT_ROUNDS = 12;
 const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 export const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -315,97 +313,32 @@ export async function getCurrentUser(userId: string) {
 }
 
 // Request Password Reset
+//
+// Phase 0 containment: recovery delivery is not available, so we must not
+// create tokens that can never be delivered. Returning before any user lookup
+// provides the strongest anti-enumeration behaviour — known and unknown
+// addresses follow identical timing and response paths.
 
-export async function requestPasswordReset(email: string) {
-  // Always return success to prevent email enumeration
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true, isDeleted: true },
-  });
-
-  if (!user || user.isDeleted) {
-    // Return silently — don't reveal whether email exists
-    return;
-  }
-
-  // Invalidate any existing reset tokens for this user
-  await prisma.passwordResetToken.deleteMany({
-    where: { userId: user.id },
-  });
-
-  // Generate a new reset token
-  const resetToken = uuidv4();
-
-  await prisma.passwordResetToken.create({
-    data: {
-      token: resetToken,
-      userId: user.id,
-      expiresAt: new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS),
-    },
-  });
-
-  // In production, send email with reset link:
-  // `${env.FRONTEND_URL}/reset-password?token=${resetToken}`
-  console.log(`[PASSWORD RESET] Token for ${email}: ${resetToken}`);
-
+export async function requestPasswordReset(_email: string) {
+  // Do not look up the user — prevents timing-based enumeration.
+  // Do not create a reset token — there is no delivery channel.
+  // Do not log anything — prevents secret or identifier disclosure.
   return;
 }
 
 // Reset Password
+//
+// Phase 0 containment: password recovery is not available. All reset
+// attempts — including legacy plaintext tokens — are rejected with the same
+// unavailable response. This prevents redemption of tokens that were
+// generated under the old plaintext-and-logged scheme.
 
-export async function resetPassword(token: string, newPassword: string) {
-  // Find the reset token
-  const resetToken = await prisma.passwordResetToken.findUnique({
-    where: { token },
-    include: {
-      user: {
-        select: { id: true, isDeleted: true },
-      },
-    },
-  });
-
-  if (!resetToken) {
-    throw new ApiError(
-      400,
-      "Invalid or expired reset token",
-      "INVALID_RESET_TOKEN",
-    );
-  }
-
-  if (resetToken.used) {
-    throw new ApiError(
-      400,
-      "This reset token has already been used",
-      "RESET_TOKEN_USED",
-    );
-  }
-
-  if (resetToken.expiresAt < new Date()) {
-    throw new ApiError(400, "Reset token has expired", "RESET_TOKEN_EXPIRED");
-  }
-
-  if (!resetToken.user || resetToken.user.isDeleted) {
-    throw new ApiError(404, "User not found", "USER_NOT_FOUND");
-  }
-
-  // Hash new password
-  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
-
-  // Update password and mark token as used in a transaction
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: resetToken.userId },
-      data: { passwordHash },
-    }),
-    prisma.passwordResetToken.update({
-      where: { id: resetToken.id },
-      data: { used: true },
-    }),
-    // Invalidate all refresh tokens for this user (force re-login)
-    prisma.refreshToken.deleteMany({
-      where: { userId: resetToken.userId },
-    }),
-  ]);
-
-  return;
+export async function resetPassword(_token: string, _newPassword: string) {
+  // Do not look up any token record — legacy plaintext tokens are no longer
+  // redeemable. The same response is returned regardless of token validity.
+  throw new ApiError(
+    503,
+    "Password recovery is temporarily unavailable. Please try again later.",
+    "PASSWORD_RESET_UNAVAILABLE",
+  );
 }

@@ -129,6 +129,10 @@ export async function me(
 }
 
 // POST /auth/forgot-password
+//
+// Phase 0 containment: recovery delivery is unavailable. The endpoint returns
+// a stable 503 response for every address — known and unknown — without
+// creating tokens, looking up users, or disclosing account existence.
 
 export async function forgotPassword(
   req: Request,
@@ -136,14 +140,15 @@ export async function forgotPassword(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { email } = req.body;
+    await authService.requestPasswordReset(req.body.email);
 
-    await authService.requestPasswordReset(email);
-
-    // Always return success to prevent email enumeration
-    sendSuccess(res, {
-      message:
-        "If an account with that email exists, a password reset link has been sent.",
+    res.status(503).json({
+      success: false,
+      error: {
+        message:
+          "Password recovery is temporarily unavailable. Please try again later.",
+        code: "PASSWORD_RESET_UNAVAILABLE",
+      },
     });
   } catch (error) {
     next(error);
@@ -151,6 +156,9 @@ export async function forgotPassword(
 }
 
 // POST /auth/reset-password
+//
+// Phase 0 containment: all reset-token redemption is rejected. Legacy
+// plaintext tokens and any future tokens receive the same response.
 
 export async function resetPassword(
   req: Request,
@@ -158,13 +166,16 @@ export async function resetPassword(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { token, password } = req.body;
+    await authService.resetPassword(req.body.token, req.body.password);
 
-    await authService.resetPassword(token, password);
-
-    sendSuccess(res, {
-      message:
-        "Password reset successfully. Please log in with your new password.",
+    // Unreachable — the service always throws PASSWORD_RESET_UNAVAILABLE.
+    res.status(503).json({
+      success: false,
+      error: {
+        message:
+          "Password recovery is temporarily unavailable. Please try again later.",
+        code: "PASSWORD_RESET_UNAVAILABLE",
+      },
     });
   } catch (error) {
     next(error);

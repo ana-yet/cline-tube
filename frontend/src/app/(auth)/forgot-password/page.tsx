@@ -4,7 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validations";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormData,
+} from "@/lib/validations";
 import apiClient from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +18,7 @@ import { Film, ArrowLeft, Mail } from "lucide-react";
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [unavailable, setUnavailable] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -28,6 +32,7 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setError(null);
     setSuccess(false);
+    setUnavailable(false);
     setIsSubmitting(true);
 
     try {
@@ -35,12 +40,23 @@ export default function ForgotPasswordPage() {
       setSuccess(true);
     } catch (err: unknown) {
       const apiError = err as {
-        response?: { data?: { error?: { message?: string } } };
+        response?: {
+          status?: number;
+          data?: { error?: { message?: string; code?: string } };
+        };
       };
-      setError(
-        apiError.response?.data?.error?.message ||
-          "Failed to send reset link. Please try again later."
-      );
+      // Phase 0: recovery delivery is unavailable — show honest message
+      if (
+        apiError.response?.status === 503 ||
+        apiError.response?.data?.error?.code === "PASSWORD_RESET_UNAVAILABLE"
+      ) {
+        setUnavailable(true);
+      } else {
+        setError(
+          apiError.response?.data?.error?.message ||
+            "Failed to send reset link. Please try again later.",
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -57,7 +73,10 @@ export default function ForgotPasswordPage() {
         <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/80 to-red-950/40" />
 
         <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors"
+          >
             <Film className="h-6 w-6 fill-red-500" />
             <span>CineTube</span>
           </Link>
@@ -68,7 +87,8 @@ export default function ForgotPasswordPage() {
             Lost your way in the Cineverse?
           </h2>
           <p className="text-zinc-300 text-lg">
-            No worries. Enter your email address and we'll send you a ticket to get back in.
+            No worries. Enter your email address and we'll send you a ticket to
+            get back in.
           </p>
         </div>
 
@@ -81,11 +101,16 @@ export default function ForgotPasswordPage() {
       <div className="flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20 relative bg-zinc-950">
         <div className="mx-auto w-full max-w-sm space-y-6">
           <div className="space-y-2 text-left">
-            <Link href="/login" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+            >
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Login</span>
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Forgot Password</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Forgot Password
+            </h1>
             <p className="text-muted-foreground text-sm">
               We will send you a password reset link to your email.
             </p>
@@ -103,16 +128,33 @@ export default function ForgotPasswordPage() {
                 <Button className="w-full">Return to Login</Button>
               </Link>
             </div>
+          ) : unavailable ? (
+            <div className="space-y-4">
+              <Alert className="border-amber-500/30 bg-amber-950/20 text-amber-400">
+                <AlertDescription>
+                  Password recovery is temporarily unavailable. Please try again
+                  later.
+                </AlertDescription>
+              </Alert>
+              <Link href="/login" className="block w-full">
+                <Button className="w-full">Return to Login</Button>
+              </Link>
+            </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {error && (
-                <Alert variant="destructive" className="border-red-500/20 bg-red-950/20">
+                <Alert
+                  variant="destructive"
+                  className="border-red-500/20 bg-red-950/20"
+                >
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-zinc-300">Email Address</Label>
+                <Label htmlFor="email" className="text-zinc-300">
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
