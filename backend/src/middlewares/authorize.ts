@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import prisma from "../config/prisma";
-import { Role, SubscriptionStatus, SubscriptionTier } from "@prisma/client";
+import { Role } from "@prisma/client";
+import { userHasPremiumAccess } from "../services/entitlement.service";
 
-// Role and (optional) subscription gate. Admins bypass the subscription check,
-// and premium status is read live from the database rather than the token.
+// Role and (optional) subscription gate. Premium access is read live from the
+// database projection rather than inferred from the token or role.
 //   authorize({ roles: ["ADMIN"] })
 //   authorize({ roles: ["USER", "ADMIN"], subscription: "PREMIUM" })
 interface AuthorizeOptions {
@@ -40,21 +40,8 @@ export const authorize = (options: AuthorizeOptions) => {
         return;
       }
 
-      if (options.subscription === "PREMIUM" && req.user.role !== "ADMIN") {
-        const subscription = await prisma.subscription.findUnique({
-          where: { userId: req.user.id },
-          select: {
-            tier: true,
-            status: true,
-            currentPeriodEnd: true,
-          },
-        });
-
-        const isPremium =
-          subscription &&
-          subscription.tier !== SubscriptionTier.FREE &&
-          subscription.status === SubscriptionStatus.ACTIVE &&
-          subscription.currentPeriodEnd > new Date();
+      if (options.subscription === "PREMIUM") {
+        const isPremium = await userHasPremiumAccess(req.user.id);
 
         if (!isPremium) {
           res.status(403).json({

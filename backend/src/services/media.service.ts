@@ -1,11 +1,8 @@
 import prisma from "../config/prisma";
-import {
-  Role,
-  SubscriptionStatus,
-  SubscriptionTier,
-} from "@prisma/client";
+import { Role } from "@prisma/client";
 import { ApiError } from "../utils/errors";
 import { deleteImage } from "./cloudinary.service";
+import { userHasPremiumAccess } from "./entitlement.service";
 import type {
   CreateMediaInput,
   UpdateMediaInput,
@@ -211,37 +208,6 @@ export async function deleteMedia(id: string) {
   await prisma.media.delete({ where: { id } });
 }
 
-// Premium access helper
-
-async function userHasPremiumAccess(
-  userId?: string,
-  role?: Role | string,
-): Promise<boolean> {
-  if (role === Role.ADMIN) {
-    return true;
-  }
-
-  if (!userId) {
-    return false;
-  }
-
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-    select: {
-      tier: true,
-      status: true,
-      currentPeriodEnd: true,
-    },
-  });
-
-  return !!(
-    subscription &&
-    subscription.tier !== SubscriptionTier.FREE &&
-    subscription.status === SubscriptionStatus.ACTIVE &&
-    subscription.currentPeriodEnd > new Date()
-  );
-}
-
 // Get Media by Slug (Public — premium link gated)
 
 export async function getMediaBySlug(
@@ -258,7 +224,7 @@ export async function getMediaBySlug(
   }
 
   if (media.pricingType === "PREMIUM") {
-    const hasAccess = await userHasPremiumAccess(viewer?.id, viewer?.role);
+    const hasAccess = await userHasPremiumAccess(viewer?.id);
 
     if (!hasAccess) {
       return {
@@ -280,7 +246,6 @@ export async function getMediaBySlug(
 export async function getStreamLink(
   slug: string,
   userId: string,
-  role: Role | string,
 ) {
   const media = await prisma.media.findUnique({
     where: { slug },
@@ -297,7 +262,7 @@ export async function getStreamLink(
   }
 
   if (media.pricingType === "PREMIUM") {
-    const hasAccess = await userHasPremiumAccess(userId, role);
+    const hasAccess = await userHasPremiumAccess(userId);
 
     if (!hasAccess) {
       throw new ApiError(

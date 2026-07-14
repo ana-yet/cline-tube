@@ -12,6 +12,7 @@ import type {
   Review,
   PaginatedResponse,
   MediaSummary,
+  Subscription,
 } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,12 @@ export default function MediaDetailPage({
 }) {
   const { slug } = use(params);
   const searchParams = useSearchParams();
-  const checkoutSuccess = searchParams.get("success") === "true";
+  const checkoutStatus = searchParams.get("checkout");
+  const checkoutSuccess =
+    checkoutStatus === "active" ||
+    checkoutStatus === "pending" ||
+    searchParams.get("success") === "true";
+  const checkoutPending = checkoutStatus === "pending";
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [premiumUnlocked, setPremiumUnlocked] = useState(false);
@@ -56,17 +62,14 @@ export default function MediaDetailPage({
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data } = await apiClient.get<
-        ApiResponse<{
-          subscription: { tier: string; status: string };
-        }>
+        ApiResponse<{ subscription: Subscription }>
       >("/payments/subscription");
       return data.data.subscription;
     },
     enabled: isAuthenticated,
     refetchInterval: (query) => {
       if (!checkoutSuccess) return false;
-      const tier = query.state.data?.tier;
-      if (tier && tier !== "FREE") return false;
+      if (query.state.data?.entitlement.active) return false;
       return 2000;
     },
   });
@@ -82,7 +85,7 @@ export default function MediaDetailPage({
       "detail",
       slug,
       isAuthenticated,
-      subscription?.tier ?? "FREE",
+      subscription?.entitlement.active ?? false,
     ],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<{ media: MediaDetail }>>(
@@ -200,8 +203,7 @@ export default function MediaDetailPage({
   useEffect(() => {
     if (
       checkoutSuccess &&
-      subscription?.tier &&
-      subscription.tier !== "FREE" &&
+      subscription?.entitlement.active &&
       !media?.accessRestricted
     ) {
       setPremiumUnlocked(true);
@@ -209,7 +211,7 @@ export default function MediaDetailPage({
     }
   }, [
     checkoutSuccess,
-    subscription?.tier,
+    subscription?.entitlement.active,
     media?.accessRestricted,
     queryClient,
     slug,
@@ -447,13 +449,13 @@ export default function MediaDetailPage({
             </AlertDescription>
           </Alert>
         )}
-        {checkoutSuccess &&
+        {checkoutPending &&
           isAuthenticated &&
           media?.accessRestricted &&
-          subscription?.tier === "FREE" && (
+          !subscription?.entitlement.active && (
             <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
               <AlertDescription>
-                Payment received. Activating premium access — this usually takes
+                Payment received. Activating premium access - this usually takes
                 a few seconds...
               </AlertDescription>
             </Alert>

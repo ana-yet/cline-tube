@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, Subscription } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,7 +124,12 @@ const ALL_GENRES = [
 export default function ProfilePage() {
   const { isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const searchParams = useSearchParams();
-  const checkoutSuccess = searchParams.get("success") === "true";
+  const checkoutStatus = searchParams.get("checkout");
+  const checkoutSuccess =
+    checkoutStatus === "active" ||
+    checkoutStatus === "pending" ||
+    searchParams.get("success") === "true";
+  const checkoutPending = checkoutStatus === "pending";
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,21 +165,14 @@ export default function ProfilePage() {
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data } = await apiClient.get<
-        ApiResponse<{
-          subscription: {
-            tier: string;
-            status: string;
-            currentPeriodEnd: string;
-          };
-        }>
+        ApiResponse<{ subscription: Subscription }>
       >("/payments/subscription");
       return data.data.subscription;
     },
     enabled: isAuthenticated,
     refetchInterval: (query) => {
       if (!checkoutSuccess) return false;
-      const tier = query.state.data?.tier;
-      if (tier && tier !== "FREE") return false;
+      if (query.state.data?.entitlement.active) return false;
       return 2000;
     },
   });
@@ -199,17 +197,25 @@ export default function ProfilePage() {
   useEffect(() => {
     if (
       checkoutSuccess &&
-      subscription?.tier &&
-      subscription.tier !== "FREE"
+      subscription?.entitlement.active
     ) {
       setSubscriptionActivated(true);
       queryClient.invalidateQueries({ queryKey: ["media"] });
     }
-  }, [checkoutSuccess, subscription?.tier, queryClient]);
+  }, [checkoutSuccess, subscription?.entitlement.active, queryClient]);
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
       await apiClient.post("/payments/cancel");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    },
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post("/payments/resume");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription"] });
@@ -307,8 +313,13 @@ export default function ProfilePage() {
     );
   };
 
-  const isPremium =
-    subscription?.tier === "MONTHLY" || subscription?.tier === "YEARLY";
+  const isPremium = Boolean(subscription?.entitlement.active);
+  const subscriptionStatusLabel = subscription?.cancelAtPeriodEnd
+    ? "CANCELING"
+    : subscription?.status;
+  const periodEndLabel = subscription?.cancelAtPeriodEnd
+    ? "Access until"
+    : "Renews";
   const displayName = profile?.name || "Anonymous User";
   const initials = profile?.name
     ? profile.name.slice(0, 2).toUpperCase()
@@ -351,14 +362,11 @@ export default function ProfilePage() {
           <div className="h-16 w-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center">
             <Check className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white">
-            Payment successful
-          </h1>
+          <h1 className="text-2xl font-bold text-white">Checkout verified</h1>
           <p className="text-zinc-500 max-w-sm">
-            Your subscription is being activated. Sign in to view your updated
-            account and premium access.
+            Sign in to view your updated account and premium access.
           </p>
-          <Link href="/login?redirect=%2Fprofile%3Fsuccess%3Dtrue">
+          <Link href="/login?redirect=%2Fprofile%3Fcheckout%3Dpending">
             <Button className="bg-red-600 hover:bg-red-700 text-white px-6">
               Sign in to view profile
             </Button>
@@ -472,12 +480,12 @@ export default function ProfilePage() {
             </AlertDescription>
           </Alert>
         )}
-        {checkoutSuccess &&
+        {checkoutPending &&
           isAuthenticated &&
-          subscription?.tier === "FREE" && (
+          !subscription?.entitlement.active && (
             <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
               <AlertDescription>
-                Payment received. Activating your subscription — this usually
+                Payment received. Activating your subscription - this usually
                 takes a few seconds...
               </AlertDescription>
             </Alert>
@@ -611,17 +619,17 @@ export default function ProfilePage() {
                     <span className="text-zinc-400">Status</span>
                     <span
                       className={
-                        subscription.status === "ACTIVE"
+                        subscription.entitlement.active
                           ? "font-medium text-emerald-400"
                           : "text-zinc-300"
                       }
                     >
-                      {subscription.status}
+                      {subscriptionStatusLabel}
                     </span>
                   </div>
-                  {isPremium && (
+                  {isPremium && subscription.currentPeriodEnd && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-400">Renews</span>
+                      <span className="text-zinc-400">{periodEndLabel}</span>
                       <span className="text-zinc-200">
                         {new Date(
                           subscription.currentPeriodEnd,
@@ -633,13 +641,25 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   )}
-                  {subscription.tier === "FREE" ? (
+                  {!isPremium ? (
                     <Link href="/pricing">
                       <Button className="h-10 w-full rounded-xl bg-red-600 hover:bg-red-700">
                         Upgrade to Premium
                       </Button>
                     </Link>
-                  ) : subscription.status !== "CANCELED" ? (
+                  ) : subscription.cancelAtPeriodEnd ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 w-full rounded-xl border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
+                      onClick={() => resumeMutation.mutate()}
+                      disabled={resumeMutation.isPending}
+                    >
+                      {resumeMutation.isPending
+                        ? "Resuming..."
+                        : "Resume renewal"}
+                    </Button>
+                  ) : isPremium ? (
                     <Button
                       variant="outline"
                       size="sm"

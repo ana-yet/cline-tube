@@ -19,23 +19,36 @@ export async function handleWebhook(
     return;
   }
 
+  let event: ReturnType<typeof paymentService.constructWebhookEvent>;
+
   try {
-    const event = paymentService.constructWebhookEvent(
+    event = paymentService.constructWebhookEvent(
       req.body, // raw body buffer
       signature,
     );
+  } catch {
+    res.status(400).json({
+      success: false,
+      error: { message: "Invalid webhook signature", code: "WEBHOOK_ERROR" },
+    });
+    return;
+  }
 
-    console.log("Webhook Event:", event.type);
+  try {
+    console.log("Stripe webhook received", { type: event.type });
 
     await paymentService.handleWebhookEvent(event);
 
     res.json({ received: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Webhook error";
-    console.error(`Webhook error: ${message}`);
-    res.status(400).json({
+    console.error("Stripe webhook processing failed", {
+      type: event.type,
+      message,
+    });
+    res.status(500).json({
       success: false,
-      error: { message, code: "WEBHOOK_ERROR" },
+      error: { message: "Webhook processing failed", code: "WEBHOOK_ERROR" },
     });
   }
 }

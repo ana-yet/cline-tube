@@ -38,6 +38,9 @@ describe("Prisma schema", () => {
       "Watchlist",
       "Subscription",
       "Transaction",
+      "CheckoutAttempt",
+      "ProcessedStripeEvent",
+      "PaymentAdjustment",
     ];
 
     for (const model of expectedModels) {
@@ -54,6 +57,10 @@ describe("Prisma schema", () => {
       "ReviewStatus",
       "SubscriptionTier",
       "SubscriptionStatus",
+      "CheckoutAttemptStatus",
+      "StripeEventStatus",
+      "PaymentAdjustmentType",
+      "PaymentAdjustmentStatus",
     ];
 
     for (const enumName of expectedEnums) {
@@ -86,5 +93,18 @@ describe("Prisma schema", () => {
     expect(schema).toContain("absoluteExpiresAt");
     expect(schema).toContain("revokedAt");
     expect(schema).toContain("usedAt");
+  });
+
+  it("has Phase 4 payment consistency models and invoice fields", () => {
+    schema = schema || fs.readFileSync(SCHEMA_PATH, "utf-8");
+
+    expect(schema).toContain("model CheckoutAttempt {");
+    expect(schema).toContain("model ProcessedStripeEvent {");
+    expect(schema).toContain("model PaymentAdjustment {");
+    expect(schema).toContain("providerInvoiceId");
+    expect(schema).toContain("providerPaymentIntentId");
+    expect(schema).toContain("amountMinor");
+    expect(schema).toContain("cancelAtPeriodEnd");
+    expect(schema).toContain("lastProviderEventTime");
   });
 });
