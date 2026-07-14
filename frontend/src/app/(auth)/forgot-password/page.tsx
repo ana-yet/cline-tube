@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
           data?: { error?: { message?: string; code?: string } };
         };
       };
-      // Phase 0: recovery delivery is unavailable — show honest message
+      // Recovery can be disabled operationally; keep the response non-enumerating.
       if (
         apiError.response?.status === 503 ||
         apiError.response?.data?.error?.code === "PASSWORD_RESET_UNAVAILABLE"

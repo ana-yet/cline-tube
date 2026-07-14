@@ -2,7 +2,8 @@ import { z } from "zod";
 
 // Validate environment variables at startup so the server fails fast with a
 // clear message instead of running with undefined config.
-const envSchema = z.object({
+const envSchema = z
+  .object({
   DATABASE_URL: z.string().url({
     message: "DATABASE_URL must be a valid PostgreSQL connection string",
   }),
@@ -21,6 +22,11 @@ const envSchema = z.object({
     .string()
     .min(1, { message: "STRIPE_WEBHOOK_SECRET is required" }),
   FRONTEND_URL: z.string().url({ message: "FRONTEND_URL must be a valid URL" }),
+  FRONTEND_ORIGINS: z.string().optional(),
+  EMAIL_DELIVERY_MODE: z.enum(["capture", "http", "disabled"]).optional(),
+  EMAIL_DELIVERY_ENDPOINT: z.string().url().optional(),
+  EMAIL_DELIVERY_TOKEN: z.string().min(16).optional(),
+  EMAIL_FROM: z.string().min(3).optional(),
   PORT: z.coerce.number().int().positive().default(5000),
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -34,7 +40,38 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z
     .string()
     .min(1, { message: "CLOUDINARY_API_SECRET is required" }),
-});
+  })
+  .superRefine((value, ctx) => {
+    const emailMode =
+      value.EMAIL_DELIVERY_MODE ??
+      (value.NODE_ENV === "production" ? "disabled" : "capture");
+
+    if (value.NODE_ENV === "production" && emailMode !== "http") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["EMAIL_DELIVERY_MODE"],
+        message: "Production password recovery requires EMAIL_DELIVERY_MODE=http",
+      });
+    }
+
+    if (emailMode === "http") {
+      if (!value.EMAIL_DELIVERY_ENDPOINT) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["EMAIL_DELIVERY_ENDPOINT"],
+          message: "EMAIL_DELIVERY_ENDPOINT is required for HTTP email delivery",
+        });
+      }
+
+      if (!value.EMAIL_DELIVERY_TOKEN) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["EMAIL_DELIVERY_TOKEN"],
+          message: "EMAIL_DELIVERY_TOKEN is required for HTTP email delivery",
+        });
+      }
+    }
+  });
 
 const parsed = envSchema.safeParse(process.env);
 
@@ -44,5 +81,13 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
-export type Env = z.infer<typeof envSchema>;
+export const env = {
+  ...parsed.data,
+  FRONTEND_ORIGINS: parsed.data.FRONTEND_ORIGINS ?? "",
+  EMAIL_DELIVERY_MODE:
+    parsed.data.EMAIL_DELIVERY_MODE ??
+    (parsed.data.NODE_ENV === "production" ? "disabled" : "capture"),
+  EMAIL_FROM: parsed.data.EMAIL_FROM ?? "CineTube <no-reply@cinetube.local>",
+};
+
+export type Env = typeof env;

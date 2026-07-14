@@ -1,5 +1,4 @@
-import apiClient, { getAccessToken } from "@/lib/api";
-import { stashAccessTokenBeforeCheckout } from "@/lib/auth-session";
+import apiClient from "@/lib/api";
 import type { ApiResponse } from "@/types";
 
 export type CheckoutPlan = "MONTHLY" | "YEARLY";
@@ -10,9 +9,6 @@ export async function startStripeCheckout(
   plan: CheckoutPlan,
   returnPath: string = DEFAULT_CHECKOUT_RETURN_PATH,
 ): Promise<string | null> {
-  const token = getAccessToken();
-  if (token) stashAccessTokenBeforeCheckout(token);
-
   const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
     "/payments/checkout",
     { plan, returnPath },

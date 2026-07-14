@@ -1,7 +1,11 @@
 import axios from "axios";
 import { clientEnv } from "@/config/env";
+import type { AuthResponse, ApiResponse } from "@/types";
 
 let accessToken: string | null = null;
+let refreshPromise: Promise<AuthResponse> | null = null;
+
+const CSRF_COOKIE_NAME = "ct_csrf";
 
 type AuthSyncHandlers = {
   onTokenRefreshed?: (token: string) => void;
@@ -22,6 +26,36 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+export function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+
+  const cookie = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${CSRF_COOKIE_NAME}=`));
+
+  return cookie ? decodeURIComponent(cookie.split("=").slice(1).join("=")) : null;
+}
+
+export async function refreshSession(): Promise<AuthResponse> {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post<ApiResponse<AuthResponse>>(
+        `${clientEnv.NEXT_PUBLIC_API_URL}/auth/refresh`,
+        {},
+        {
+          withCredentials: true,
+          headers: buildCsrfHeaders(),
+        },
+      )
+      .then((response) => response.data.data)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
 const apiClient = axios.create({
   baseURL: clientEnv.NEXT_PUBLIC_API_URL,
   withCredentials: true,
@@ -37,74 +71,57 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (isUnsafeMethod(config.method)) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        config.headers["X-CSRF-Token"] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: unknown) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(undefined);
-    }
-  });
-  failedQueue = [];
-};
-
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isRefreshRequest = originalRequest?.url?.includes("/auth/refresh");
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then(() => apiClient(originalRequest));
-      }
-
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isRefreshRequest
+    ) {
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const { data } = await axios.post(
-          `${clientEnv.NEXT_PUBLIC_API_URL}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
-
-        if (data.success && data.data?.accessToken) {
-          setAccessToken(data.data.accessToken);
-          authSyncHandlers.onTokenRefreshed?.(data.data.accessToken);
-          processQueue(null);
-          originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
-          return apiClient(originalRequest);
-        }
-
-        processQueue(error);
-        setAccessToken(null);
-        authSyncHandlers.onSessionCleared?.();
-        return Promise.reject(error);
+        const data = await refreshSession();
+        setAccessToken(data.accessToken);
+        authSyncHandlers.onTokenRefreshed?.(data.accessToken);
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError);
         setAccessToken(null);
         authSyncHandlers.onSessionCleared?.();
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 
     return Promise.reject(error);
   },
 );
+
+function buildCsrfHeaders(): Record<string, string> {
+  const csrfToken = getCsrfToken();
+  return csrfToken ? { "X-CSRF-Token": csrfToken } : {};
+}
+
+function isUnsafeMethod(method?: string): boolean {
+  return !["get", "head", "options"].includes((method || "get").toLowerCase());
+}
 
 export default apiClient;

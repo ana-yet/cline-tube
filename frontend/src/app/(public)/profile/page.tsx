@@ -37,6 +37,10 @@ import {
   ExternalLink,
   ChevronRight,
   Film,
+  KeyRound,
+  Monitor,
+  Trash2,
+  LogOut,
 } from "lucide-react";
 
 // Inline social SVG icons — lucide-react no longer ships social media icons
@@ -93,6 +97,15 @@ interface ProfileData {
   };
 }
 
+interface SessionData {
+  id: string;
+  device: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+
 const ALL_GENRES = [
   "Action",
   "Adventure",
@@ -109,7 +122,7 @@ const ALL_GENRES = [
 ];
 
 export default function ProfilePage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const searchParams = useSearchParams();
   const checkoutSuccess = searchParams.get("success") === "true";
   const queryClient = useQueryClient();
@@ -126,6 +139,12 @@ export default function ProfilePage() {
     github: "",
   });
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [securityMessage, setSecurityMessage] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -158,6 +177,17 @@ export default function ProfilePage() {
       if (tier && tier !== "FREE") return false;
       return 2000;
     },
+  });
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ["auth", "sessions"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ sessions: SessionData[] }>
+      >("/auth/sessions");
+      return data.data.sessions;
+    },
+    enabled: isAuthenticated,
   });
 
   useEffect(() => {
@@ -211,6 +241,48 @@ export default function ProfilePage() {
       setError(
         apiError.response?.data?.error?.message || "Failed to update profile",
       );
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post("/auth/change-password", passwordForm);
+    },
+    onSuccess: () => {
+      setPasswordForm({
+        currentPassword: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setSecurityMessage("Password updated. Other sessions were signed out.");
+      queryClient.invalidateQueries({ queryKey: ["auth", "sessions"] });
+      setTimeout(() => setSecurityMessage(null), 4000);
+    },
+    onError: (err: unknown) => {
+      const apiError = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
+      setError(
+        apiError.response?.data?.error?.message || "Failed to update password",
+      );
+    },
+  });
+
+  const revokeSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await apiClient.delete(`/auth/sessions/${sessionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth", "sessions"] });
+    },
+  });
+
+  const logoutAllMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post("/auth/logout-all");
+    },
+    onSuccess: async () => {
+      await logout();
     },
   });
 
@@ -923,6 +995,177 @@ export default function ProfilePage() {
 
                 <Card className="border-zinc-800/80 bg-zinc-900/40">
                   <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base font-bold text-white">
+                      <KeyRound className="h-4 w-4 text-red-400" />
+                      Security
+                    </CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      Password and active browser sessions.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {securityMessage && (
+                      <Alert className="border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
+                        <AlertDescription>{securityMessage}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <form
+                      className="grid gap-4 md:grid-cols-3"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        changePasswordMutation.mutate();
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="current-password"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Current password
+                        </Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          autoComplete="current-password"
+                          value={passwordForm.currentPassword}
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              currentPassword: event.target.value,
+                            }))
+                          }
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="new-password"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          New password
+                        </Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          autoComplete="new-password"
+                          value={passwordForm.password}
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              password: event.target.value,
+                            }))
+                          }
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="confirm-new-password"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Confirm password
+                        </Label>
+                        <Input
+                          id="confirm-new-password"
+                          type="password"
+                          autoComplete="new-password"
+                          value={passwordForm.confirmPassword}
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              confirmPassword: event.target.value,
+                            }))
+                          }
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <Button
+                          type="submit"
+                          disabled={changePasswordMutation.isPending}
+                          className="h-10 rounded-xl bg-red-600 px-5 font-semibold hover:bg-red-700"
+                        >
+                          {changePasswordMutation.isPending
+                            ? "Updating..."
+                            : "Update password"}
+                        </Button>
+                      </div>
+                    </form>
+
+                    <Separator className="bg-zinc-800" />
+
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                          Active sessions
+                        </h4>
+                        <Button
+                          variant="outline"
+                          onClick={() => logoutAllMutation.mutate()}
+                          disabled={logoutAllMutation.isPending}
+                          className="h-9 rounded-xl border-zinc-800 text-zinc-300 hover:bg-zinc-900"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign out all
+                        </Button>
+                      </div>
+
+                      <div className="divide-y divide-zinc-800 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/50">
+                        {sessions.length === 0 ? (
+                          <p className="px-4 py-4 text-sm text-zinc-500">
+                            No active sessions found.
+                          </p>
+                        ) : (
+                          sessions.map((session) => (
+                            <div
+                              key={session.id}
+                              className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <div className="flex min-w-0 items-start gap-3">
+                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-zinc-500">
+                                  <Monitor className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="truncate text-sm font-medium text-zinc-200">
+                                      {session.device}
+                                    </p>
+                                    {session.current && (
+                                      <Badge className="bg-emerald-500/10 text-emerald-400">
+                                        Current
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-zinc-500">
+                                    Last used {formatSessionDate(session.lastUsedAt)}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                disabled={
+                                  session.current ||
+                                  revokeSessionMutation.isPending
+                                }
+                                onClick={() =>
+                                  revokeSessionMutation.mutate(session.id)
+                                }
+                                className="h-9 self-start rounded-lg text-zinc-400 hover:bg-red-500/10 hover:text-red-400 sm:self-center"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Revoke
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800/80 bg-zinc-900/40">
+                  <CardHeader>
                     <CardTitle className="text-base font-bold text-white">
                       Social profiles
                     </CardTitle>
@@ -1006,4 +1249,13 @@ export default function ProfilePage() {
       </div>
     </main>
   );
+}
+
+function formatSessionDate(value: string): string {
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

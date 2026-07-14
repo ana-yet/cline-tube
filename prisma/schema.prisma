@@ -143,30 +143,44 @@ model Account {
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id                String    @id @default(uuid())
+  tokenHash         String    @unique @map("token")
+  userId            String
+  familyId          String
+  parentId          String?
+  csrfTokenHash     String
+  userAgent         String?
+  ipAddressHash     String?
+  expiresAt         DateTime
+  absoluteExpiresAt DateTime
+  usedAt            DateTime?
+  revokedAt         DateTime?
+  lastUsedAt        DateTime  @default(now())
+  createdAt         DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([token])
+  @@index([tokenHash])
   @@index([userId])
+  @@index([familyId])
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
 }
 
 model PasswordResetToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
+  id        String    @id @default(uuid())
+  tokenHash String    @unique @map("token")
   userId    String
   expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([token])
+  @@index([tokenHash])
   @@index([userId])
+  @@index([expiresAt, used])
 }
 
 model Media {

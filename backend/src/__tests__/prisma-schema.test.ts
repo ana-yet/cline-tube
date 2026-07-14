@@ -75,4 +75,16 @@ describe("Prisma schema", () => {
     schema = schema || fs.readFileSync(SCHEMA_PATH, "utf-8");
     expect(schema).toContain("@@unique([userId, mediaId]");
   });
+
+  it("has Phase 3 auth session and reset-token fields", () => {
+    schema = schema || fs.readFileSync(SCHEMA_PATH, "utf-8");
+
+    expect(schema).toContain("tokenHash");
+    expect(schema).toContain("@map(\"token\")");
+    expect(schema).toContain("familyId");
+    expect(schema).toContain("csrfTokenHash");
+    expect(schema).toContain("absoluteExpiresAt");
+    expect(schema).toContain("revokedAt");
+    expect(schema).toContain("usedAt");
+  });
 });

@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
           data?: { error?: { message?: string; code?: string } };
         };
       };
-      // Phase 0: recovery is unavailable — show honest message
+      // Recovery can be disabled operationally; keep the response honest.
       if (
         apiError.response?.status === 503 ||
         apiError.response?.data?.error?.code === "PASSWORD_RESET_UNAVAILABLE"
