@@ -12,6 +12,7 @@ import { webhookRouter } from "./routes/webhook.routes";
 import { errorHandler } from "./middlewares/errorHandler";
 import { requestId } from "./middlewares/requestId";
 import { apiLimiter } from "./middlewares/rateLimiter";
+import { logger } from "./utils/logger";
 
 const app = express();
 
@@ -23,8 +24,26 @@ app.use(helmet());
 app.use(cors(corsOptions));
 app.use(compression());
 
+// In production, log requests as structured JSON; in dev, use morgan's colored output
 if (process.env.NODE_ENV !== "test") {
-  app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+  if (process.env.NODE_ENV === "production") {
+    app.use(
+      morgan((tokens, req, res) => {
+        return JSON.stringify({
+          level: "info",
+          message: "HTTP request",
+          method: tokens.method(req, res),
+          url: tokens.url(req, res),
+          status: Number(tokens.status(req, res)),
+          responseTime: Number(tokens["response-time"](req, res)),
+          requestId: (req as unknown as Record<string, unknown>).requestId as string,
+          ip: tokens["remote-addr"](req, res),
+        });
+      }),
+    );
+  } else {
+    app.use(morgan("dev"));
+  }
 }
 
 // Stripe needs the raw body — register before express.json()
@@ -57,6 +76,16 @@ app.get("/api/health", async (_req, res) => {
         timestamp: new Date().toISOString(),
       },
     });
+  }
+});
+
+// Readiness probe — returns 200 only when the app is ready to serve traffic
+app.get("/api/ready", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: "ready" });
+  } catch {
+    res.status(503).json({ status: "not_ready" });
   }
 });
 

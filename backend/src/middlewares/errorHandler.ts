@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { ZodError } from "zod";
 import { ApiError } from "../utils/errors";
+import { logger } from "../utils/logger";
 
 // Maps known error types to consistent JSON responses and hides internal
 // details in production. Unhandled errors fall through to a generic 500.
@@ -12,7 +13,7 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
-  console.error(`[ERROR] ${req.method} ${req.path} — ${err.message}`, {
+  logger.error(`${req.method} ${req.path} — ${err.message}`, {
     requestId: req.requestId,
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
