@@ -8,9 +8,10 @@ import { useAuth } from "@/providers/auth-provider";
 import apiClient from "@/lib/api";
 import {
   DEFAULT_CHECKOUT_RETURN_PATH,
+  fetchPlans,
   startStripeCheckout,
 } from "@/lib/checkout";
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, Subscription } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +35,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What is the refund policy?",
-    a: "We offer a 7-day money-back guarantee for monthly plans and a 14-day refund period for annual plans if you are unsatisfied with the premium content experience.",
+    a: "Refund requests are reviewed through support and reflected in your account after provider confirmation.",
   },
   {
     q: "Is there a difference in content quality between plans?",
@@ -48,31 +49,56 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const checkoutReady = !authLoading && isAuthenticated;
+  const checkoutStatus = searchParams.get("checkout");
+  const checkoutActive = checkoutStatus === "active";
+  const positiveCheckoutMessage =
+    checkoutActive || searchParams.get("success") === "true";
   const checkoutReturnPath =
     searchParams.get("return")?.split("?")[0] || DEFAULT_CHECKOUT_RETURN_PATH;
 
-  // Handle success/cancel from Stripe redirect
+  // Handle checkout return status resolved by the backend.
   useEffect(() => {
-    if (searchParams.get("success") === "true") {
-      setMessage("Subscription activated! Welcome to premium.");
+    if (checkoutStatus === "active") {
+      setMessage("Subscription activated. Welcome to premium.");
+    } else if (checkoutStatus === "pending") {
+      setMessage("Payment received. Premium access is still activating.");
+    } else if (checkoutStatus === "canceled") {
+      setMessage("Checkout canceled. No charges were made.");
+    } else if (checkoutStatus === "failed" || checkoutStatus === "expired") {
+      setMessage("Checkout could not be completed. Please try again.");
+    } else if (searchParams.get("success") === "true") {
+      setMessage("Checkout is being verified. Refresh your subscription shortly.");
     } else if (searchParams.get("canceled") === "true") {
       setMessage("Checkout canceled. No charges were made.");
     }
-  }, [searchParams]);
+  }, [checkoutStatus, searchParams]);
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["payments", "plans"],
+    queryFn: fetchPlans,
+  });
 
   // Fetch current subscription
   const { data: subscription } = useQuery({
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data } = await apiClient.get<
-        ApiResponse<{ subscription: { tier: string; status: string } }>
+        ApiResponse<{ subscription: Subscription }>
       >("/payments/subscription");
       return data.data.subscription;
     },
     enabled: checkoutReady,
   });
 
-  const currentPlan = subscription?.tier || "FREE";
+  const currentPlan = subscription?.entitlement.active
+    ? subscription.tier
+    : "FREE";
+  const monthlyPlan = plans.find((plan) => plan.tier === "MONTHLY");
+  const yearlyPlan = plans.find((plan) => plan.tier === "YEARLY");
+  const formatPlanPrice = (amountMinor?: number) =>
+    typeof amountMinor === "number"
+      ? `$${(amountMinor / 100).toFixed(2)}`
+      : "";
 
   const handleCheckout = async (plan: "MONTHLY" | "YEARLY") => {
     if (authLoading) return;
@@ -113,14 +139,14 @@ export default function PricingPage() {
         <div className="container mx-auto px-4 pt-6 max-w-3xl relative z-20">
           <Alert
             className={
-              searchParams.get("success") === "true"
+              positiveCheckoutMessage
                 ? "border-emerald-500/50 bg-emerald-500/10"
                 : "border-zinc-700 bg-zinc-900"
             }
           >
             <AlertDescription
               className={
-                searchParams.get("success") === "true"
+                positiveCheckoutMessage
                   ? "text-emerald-400"
                   : "text-zinc-400"
               }
@@ -223,7 +249,7 @@ export default function PricingPage() {
               )}
               <div className="mt-4 flex items-baseline justify-center text-white">
                 <span className="text-5xl font-extrabold tracking-tight">
-                  $9.99
+                  {formatPlanPrice(monthlyPlan?.amountMinor) || "$9.99"}
                 </span>
                 <span className="ml-1 text-sm text-zinc-500">/ month</span>
               </div>
@@ -289,7 +315,7 @@ export default function PricingPage() {
               )}
               <div className="mt-4 flex items-baseline justify-center text-white">
                 <span className="text-5xl font-extrabold tracking-tight">
-                  $99.99
+                  {formatPlanPrice(yearlyPlan?.amountMinor) || "$99.99"}
                 </span>
                 <span className="ml-1 text-sm text-zinc-500">/ year</span>
               </div>

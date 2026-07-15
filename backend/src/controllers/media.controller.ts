@@ -166,7 +166,6 @@ export async function getStream(
     const stream = await mediaService.getStreamLink(
       req.params.slug,
       req.user!.id,
-      req.user!.role,
     );
     sendSuccess(res, stream);
   } catch (error) {

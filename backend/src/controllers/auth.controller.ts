@@ -4,19 +4,23 @@ import {
   refreshTokenCookieOptions,
   clearRefreshTokenCookieOptions,
 } from "../services/auth.service";
+import {
+  CSRF_COOKIE_NAME,
+  csrfCookieOptions,
+  clearCsrfCookieOptions,
+} from "../middlewares/csrf";
+import { ApiError } from "../utils/errors";
 import { sendSuccess } from "../utils/response";
 
-// POST /auth/register
 export async function register(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = await authService.register(req.body);
+    const result = await authService.register(req.body, getSessionMetadata(req));
 
-    // Set refresh token as HttpOnly cookie
-    res.cookie("refreshToken", result.refreshToken, refreshTokenCookieOptions);
+    setAuthCookies(res, result.refreshToken, result.csrfToken);
 
     sendSuccess(
       res,
@@ -31,18 +35,15 @@ export async function register(
   }
 }
 
-// POST /auth/login
-
 export async function login(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = await authService.login(req.body);
+    const result = await authService.login(req.body, getSessionMetadata(req));
 
-    // Set refresh token as HttpOnly cookie
-    res.cookie("refreshToken", result.refreshToken, refreshTokenCookieOptions);
+    setAuthCookies(res, result.refreshToken, result.csrfToken);
 
     sendSuccess(res, {
       user: result.user,
@@ -53,20 +54,14 @@ export async function login(
   }
 }
 
-// POST /auth/logout
-
 export async function logout(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const refreshToken = req.cookies.refreshToken;
-
-    await authService.logout(refreshToken);
-
-    // Clear the refresh token cookie
-    res.clearCookie("refreshToken", clearRefreshTokenCookieOptions);
+    await authService.logout(req.cookies.refreshToken);
+    clearAuthCookies(res);
 
     sendSuccess(res, { message: "Logged out successfully" });
   } catch (error) {
@@ -74,7 +69,20 @@ export async function logout(
   }
 }
 
-// POST /auth/refresh
+export async function logoutAll(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await authService.logoutAll(req.user!.id);
+    clearAuthCookies(res);
+
+    sendSuccess(res, { message: "All sessions have been signed out" });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function refresh(
   req: Request,
@@ -83,6 +91,7 @@ export async function refresh(
 ): Promise<void> {
   try {
     const oldRefreshToken = req.cookies.refreshToken;
+    const csrfToken = req.cookies[CSRF_COOKIE_NAME];
 
     if (!oldRefreshToken) {
       res.status(401).json({
@@ -95,23 +104,25 @@ export async function refresh(
       return;
     }
 
-    const result = await authService.refreshTokens(oldRefreshToken);
+    const result = await authService.refreshTokens(
+      oldRefreshToken,
+      csrfToken,
+      getSessionMetadata(req),
+    );
 
-    // Set new refresh token as HttpOnly cookie
-    res.cookie("refreshToken", result.refreshToken, refreshTokenCookieOptions);
+    setAuthCookies(res, result.refreshToken, result.csrfToken);
 
     sendSuccess(res, {
       user: result.user,
       accessToken: result.accessToken,
     });
   } catch (error) {
-    // On refresh failure, clear the cookie
-    res.clearCookie("refreshToken", clearRefreshTokenCookieOptions);
+    if (shouldClearAuthCookies(error)) {
+      clearAuthCookies(res);
+    }
     next(error);
   }
 }
-
-// GET /auth/me
 
 export async function me(
   req: Request,
@@ -119,8 +130,7 @@ export async function me(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = req.user!.id;
-    const user = await authService.getCurrentUser(userId);
+    const user = await authService.getCurrentUser(req.user!.id);
 
     sendSuccess(res, { user });
   } catch (error) {
@@ -128,29 +138,18 @@ export async function me(
   }
 }
 
-// POST /auth/forgot-password
-
 export async function forgotPassword(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { email } = req.body;
-
-    await authService.requestPasswordReset(email);
-
-    // Always return success to prevent email enumeration
-    sendSuccess(res, {
-      message:
-        "If an account with that email exists, a password reset link has been sent.",
-    });
+    const result = await authService.requestPasswordReset(req.body.email);
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }
 }
-
-// POST /auth/reset-password
 
 export async function resetPassword(
   req: Request,
@@ -158,15 +157,93 @@ export async function resetPassword(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { token, password } = req.body;
-
-    await authService.resetPassword(token, password);
-
-    sendSuccess(res, {
-      message:
-        "Password reset successfully. Please log in with your new password.",
-    });
+    await authService.resetPassword(req.body.token, req.body.password);
+    sendSuccess(res, { message: "Password has been reset successfully" });
   } catch (error) {
     next(error);
   }
+}
+
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await authService.changePassword(
+      req.user!.id,
+      req.body,
+      req.cookies.refreshToken,
+    );
+
+    sendSuccess(res, { message: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listSessions(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const sessions = await authService.listSessions(
+      req.user!.id,
+      req.cookies.refreshToken,
+    );
+
+    sendSuccess(res, { sessions });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function revokeSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const result = await authService.revokeSession(
+      req.user!.id,
+      req.params.sessionId,
+      req.cookies.refreshToken,
+    );
+
+    if (result.revokedCurrentSession) {
+      clearAuthCookies(res);
+    }
+
+    sendSuccess(res, { message: "Session revoked successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function setAuthCookies(
+  res: Response,
+  refreshToken: string,
+  csrfToken: string,
+): void {
+  res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
+  res.cookie(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions);
+}
+
+function clearAuthCookies(res: Response): void {
+  res.clearCookie("refreshToken", clearRefreshTokenCookieOptions);
+  res.clearCookie(CSRF_COOKIE_NAME, clearCsrfCookieOptions);
+}
+
+function getSessionMetadata(req: Request) {
+  return {
+    userAgent: req.get("user-agent"),
+    ipAddress: req.ip,
+  };
+}
+
+function shouldClearAuthCookies(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return true;
+
+  return error.errorCode !== "REFRESH_ALREADY_ROTATED";
 }

@@ -1,21 +1,31 @@
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import prisma from "../config/prisma";
 import { env } from "../config/env";
+import { generateCsrfToken } from "../middlewares/csrf";
+import { sendPasswordResetEmail } from "./email.service";
 import { ApiError } from "../utils/errors";
 import {
   generateAccessToken,
   generateRefreshToken,
   hashToken,
 } from "../utils/jwt";
-import type { RegisterInput, LoginInput } from "../validations/auth.validation";
-
-// Authentication logic: bcrypt password hashing, rotating refresh tokens
-// (hashed in the DB and revoked on use), and single-use password reset tokens.
+import type {
+  RegisterInput,
+  LoginInput,
+  ChangePasswordInput,
+} from "../validations/auth.validation";
 
 const BCRYPT_SALT_ROUNDS = 12;
-const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+const REFRESH_TOKEN_EXPIRY_MS = parseDurationMs(
+  env.JWT_REFRESH_EXPIRY,
+  7 * 24 * 60 * 60 * 1000,
+);
+const REFRESH_TOKEN_ABSOLUTE_EXPIRY_MS = REFRESH_TOKEN_EXPIRY_MS;
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000;
+const REFRESH_REUSE_GRACE_MS = 10_000;
+const MAX_ACTIVE_SESSIONS = 5;
+const MAX_USER_AGENT_LENGTH = 240;
 
 export const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -35,9 +45,7 @@ export const clearRefreshTokenCookieOptions = {
   path: refreshTokenCookieOptions.path,
 };
 
-// Helper: Build safe user object
-
-function sanitizeUser(user: {
+type SafeUserRecord = {
   id: string;
   name: string | null;
   email: string;
@@ -45,7 +53,14 @@ function sanitizeUser(user: {
   image: string | null;
   emailVerified: Date | null;
   createdAt: Date;
-}) {
+};
+
+interface SessionMetadata {
+  userAgent?: string;
+  ipAddress?: string;
+}
+
+function sanitizeUser(user: SafeUserRecord) {
   return {
     id: user.id,
     name: user.name,
@@ -57,12 +72,19 @@ function sanitizeUser(user: {
   };
 }
 
-// Register
+function normalizeMetadata(metadata: SessionMetadata) {
+  return {
+    userAgent: metadata.userAgent?.slice(0, MAX_USER_AGENT_LENGTH),
+    ipAddressHash: metadata.ipAddress ? hashToken(metadata.ipAddress) : null,
+  };
+}
 
-export async function register(input: RegisterInput) {
+export async function register(
+  input: RegisterInput,
+  metadata: SessionMetadata = {},
+) {
   const { name, email, password } = input;
 
-  // Check if email already exists
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
@@ -75,10 +97,8 @@ export async function register(input: RegisterInput) {
     );
   }
 
-  // Hash password
   const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
-  // Create user + profile in a transaction
   const user = await prisma.user.create({
     data: {
       name,
@@ -90,55 +110,28 @@ export async function register(input: RegisterInput) {
         },
       },
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      image: true,
-      emailVerified: true,
-      createdAt: true,
-    },
+    select: safeUserSelect(),
   });
 
-  // Generate token pair
-  const accessToken = generateAccessToken(user.id, user.email, user.role);
-  const refreshToken = generateRefreshToken();
-
-  // Store HASHED refresh token in database (plain token goes to client cookie)
-  await prisma.refreshToken.create({
-    data: {
-      token: hashToken(refreshToken),
-      userId: user.id,
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
-    },
-  });
+  const session = await createRefreshSession(user.id, metadata);
 
   return {
     user: sanitizeUser(user),
-    accessToken,
-    refreshToken,
+    accessToken: generateAccessToken(user.id, user.email, user.role),
+    refreshToken: session.refreshToken,
+    csrfToken: session.csrfToken,
   };
 }
 
-// Login
-
-export async function login(input: LoginInput) {
+export async function login(input: LoginInput, metadata: SessionMetadata = {}) {
   const { email, password } = input;
 
-  // Find user by email
   const user = await prisma.user.findUnique({
     where: { email },
     select: {
-      id: true,
-      name: true,
-      email: true,
+      ...safeUserSelect(),
       passwordHash: true,
-      role: true,
-      image: true,
-      emailVerified: true,
       isDeleted: true,
-      createdAt: true,
     },
   });
 
@@ -154,63 +147,51 @@ export async function login(input: LoginInput) {
     );
   }
 
-  // Verify password
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid email or password", "INVALID_CREDENTIALS");
   }
 
-  // Generate token pair
-  const accessToken = generateAccessToken(user.id, user.email, user.role);
-  const refreshToken = generateRefreshToken();
-
-  // Store HASHED refresh token in database (plain token goes to client cookie)
-  await prisma.refreshToken.create({
-    data: {
-      token: hashToken(refreshToken),
-      userId: user.id,
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
-    },
-  });
+  const session = await createRefreshSession(user.id, metadata);
 
   return {
     user: sanitizeUser(user),
-    accessToken,
-    refreshToken,
+    accessToken: generateAccessToken(user.id, user.email, user.role),
+    refreshToken: session.refreshToken,
+    csrfToken: session.csrfToken,
   };
 }
 
-// Logout
-
 export async function logout(refreshToken: string | undefined) {
-  if (refreshToken) {
-    // Delete the specific refresh token (search by hash)
-    await prisma.refreshToken.deleteMany({
-      where: { token: hashToken(refreshToken) },
-    });
-  }
+  if (!refreshToken) return;
+
+  await revokeFamilyForToken(refreshToken);
 }
 
-// Refresh Token Rotation
+export async function logoutAll(userId: string) {
+  await prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}
 
-export async function refreshTokens(oldRefreshToken: string) {
-  // Hash the incoming token to look up in DB (only hashes are stored)
+export async function refreshTokens(
+  oldRefreshToken: string,
+  csrfToken: string,
+  metadata: SessionMetadata = {},
+) {
   const tokenHash = hashToken(oldRefreshToken);
+  const csrfTokenHash = hashToken(csrfToken);
+  const now = new Date();
 
   const storedToken = await prisma.refreshToken.findUnique({
-    where: { token: tokenHash },
+    where: { tokenHash },
     include: {
       user: {
         select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          image: true,
-          emailVerified: true,
+          ...safeUserSelect(),
           isDeleted: true,
-          createdAt: true,
         },
       },
     },
@@ -220,60 +201,87 @@ export async function refreshTokens(oldRefreshToken: string) {
     throw new ApiError(401, "Invalid refresh token", "INVALID_REFRESH_TOKEN");
   }
 
-  // Check if token has expired
-  if (storedToken.expiresAt < new Date()) {
-    // Clean up expired token
-    await prisma.refreshToken.delete({ where: { id: storedToken.id } });
+  if (storedToken.csrfTokenHash !== csrfTokenHash) {
+    throw new ApiError(403, "CSRF token mismatch", "CSRF_TOKEN_MISMATCH");
+  }
+
+  if (storedToken.usedAt || storedToken.revokedAt) {
+    await handleRefreshReuse(storedToken.familyId, storedToken.usedAt, now);
+  }
+
+  if (
+    storedToken.expiresAt <= now ||
+    storedToken.absoluteExpiresAt <= now ||
+    !storedToken.user ||
+    storedToken.user.isDeleted
+  ) {
+    await revokeRefreshFamily(storedToken.familyId);
     throw new ApiError(401, "Refresh token expired", "REFRESH_TOKEN_EXPIRED");
   }
 
-  // Check if user still exists and is not deleted
-  if (!storedToken.user || storedToken.user.isDeleted) {
-    await prisma.refreshToken.delete({ where: { id: storedToken.id } });
-    throw new ApiError(
-      401,
-      "User not found or account deactivated",
-      "UNAUTHORIZED",
-    );
-  }
-
-  const user = storedToken.user;
-
-  // Token Rotation: revoke old, issue new
-  await prisma.refreshToken.delete({ where: { id: storedToken.id } });
-
-  const accessToken = generateAccessToken(user.id, user.email, user.role);
-  const newRefreshToken = generateRefreshToken();
-
-  await prisma.refreshToken.create({
+  const consumed = await prisma.refreshToken.updateMany({
+    where: {
+      id: storedToken.id,
+      tokenHash,
+      usedAt: null,
+      revokedAt: null,
+    },
     data: {
-      token: hashToken(newRefreshToken),
-      userId: user.id,
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
+      usedAt: now,
+      lastUsedAt: now,
     },
   });
 
+  if (consumed.count !== 1) {
+    const latest = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      select: { familyId: true, usedAt: true },
+    });
+    await handleRefreshReuse(
+      latest?.familyId ?? storedToken.familyId,
+      latest?.usedAt ?? null,
+      now,
+    );
+  }
+
+  const refreshToken = generateRefreshToken();
+  const newCsrfToken = generateCsrfToken();
+  const { userAgent, ipAddressHash } = normalizeMetadata(metadata);
+  const expiresAt = new Date(now.getTime() + REFRESH_TOKEN_EXPIRY_MS);
+  const absoluteExpiresAt =
+    storedToken.absoluteExpiresAt < expiresAt ? storedToken.absoluteExpiresAt : expiresAt;
+
+  await prisma.refreshToken.create({
+    data: {
+      tokenHash: hashToken(refreshToken),
+      userId: storedToken.userId,
+      familyId: storedToken.familyId,
+      parentId: storedToken.id,
+      csrfTokenHash: hashToken(newCsrfToken),
+      userAgent,
+      ipAddressHash,
+      expiresAt,
+      absoluteExpiresAt,
+      lastUsedAt: now,
+    },
+  });
+
+  const user = storedToken.user;
+
   return {
     user: sanitizeUser(user),
-    accessToken,
-    refreshToken: newRefreshToken,
+    accessToken: generateAccessToken(user.id, user.email, user.role),
+    refreshToken,
+    csrfToken: newCsrfToken,
   };
 }
-
-// Get Current User
 
 export async function getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      image: true,
-      emailVerified: true,
+      ...safeUserSelect(),
       isDeleted: true,
-      createdAt: true,
       profile: {
         select: {
           bio: true,
@@ -314,84 +322,115 @@ export async function getCurrentUser(userId: string) {
   };
 }
 
-// Request Password Reset
-
 export async function requestPasswordReset(email: string) {
-  // Always return success to prevent email enumeration
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true, isDeleted: true },
-  });
+  const genericResult = {
+    message:
+      "If an account exists for that email, password reset instructions have been sent.",
+  };
 
-  if (!user || user.isDeleted) {
-    // Return silently — don't reveal whether email exists
-    return;
+  if (env.EMAIL_DELIVERY_MODE === "disabled") {
+    throw new ApiError(
+      503,
+      "Password recovery is temporarily unavailable. Please try again later.",
+      "PASSWORD_RESET_UNAVAILABLE",
+    );
   }
 
-  // Invalidate any existing reset tokens for this user
-  await prisma.passwordResetToken.deleteMany({
-    where: { userId: user.id },
-  });
-
-  // Generate a new reset token
-  const resetToken = uuidv4();
-
-  await prisma.passwordResetToken.create({
-    data: {
-      token: resetToken,
-      userId: user.id,
-      expiresAt: new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS),
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      email: true,
+      isDeleted: true,
     },
   });
 
-  // In production, send email with reset link:
-  // `${env.FRONTEND_URL}/reset-password?token=${resetToken}`
-  console.log(`[PASSWORD RESET] Token for ${email}: ${resetToken}`);
+  if (!user || user.isDeleted) {
+    await antiEnumerationDelay();
+    return genericResult;
+  }
 
-  return;
+  const resetToken = generateRefreshToken();
+  const tokenHash = hashToken(resetToken);
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+
+  await prisma.passwordResetToken.updateMany({
+    where: {
+      userId: user.id,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+    data: {
+      used: true,
+      usedAt: new Date(),
+    },
+  });
+
+  await prisma.passwordResetToken.create({
+    data: {
+      tokenHash,
+      userId: user.id,
+      expiresAt,
+    },
+  });
+
+  try {
+    const resetUrl = new URL("/reset-password", env.FRONTEND_URL);
+    resetUrl.searchParams.set("token", resetToken);
+
+    await sendPasswordResetEmail({
+      to: user.email,
+      resetUrl: resetUrl.toString(),
+    });
+  } catch (error) {
+    await prisma.passwordResetToken.updateMany({
+      where: { tokenHash },
+      data: {
+        used: true,
+        usedAt: new Date(),
+      },
+    });
+    throw error;
+  }
+
+  return genericResult;
 }
 
-// Reset Password
-
 export async function resetPassword(token: string, newPassword: string) {
-  // Find the reset token
+  const tokenHash = hashToken(token);
+  const now = new Date();
+
   const resetToken = await prisma.passwordResetToken.findUnique({
-    where: { token },
+    where: { tokenHash },
     include: {
       user: {
-        select: { id: true, isDeleted: true },
+        select: {
+          id: true,
+          passwordHash: true,
+          isDeleted: true,
+        },
       },
     },
   });
 
-  if (!resetToken) {
+  if (
+    !resetToken ||
+    resetToken.used ||
+    resetToken.usedAt ||
+    resetToken.expiresAt <= now ||
+    resetToken.user.isDeleted ||
+    !resetToken.user.passwordHash
+  ) {
     throw new ApiError(
       400,
-      "Invalid or expired reset token",
+      "Reset token is invalid or expired",
       "INVALID_RESET_TOKEN",
     );
   }
 
-  if (resetToken.used) {
-    throw new ApiError(
-      400,
-      "This reset token has already been used",
-      "RESET_TOKEN_USED",
-    );
-  }
-
-  if (resetToken.expiresAt < new Date()) {
-    throw new ApiError(400, "Reset token has expired", "RESET_TOKEN_EXPIRED");
-  }
-
-  if (!resetToken.user || resetToken.user.isDeleted) {
-    throw new ApiError(404, "User not found", "USER_NOT_FOUND");
-  }
-
-  // Hash new password
+  await assertNewPassword(resetToken.user.passwordHash, newPassword);
   const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
-  // Update password and mark token as used in a transaction
   await prisma.$transaction([
     prisma.user.update({
       where: { id: resetToken.userId },
@@ -399,13 +438,339 @@ export async function resetPassword(token: string, newPassword: string) {
     }),
     prisma.passwordResetToken.update({
       where: { id: resetToken.id },
-      data: { used: true },
+      data: {
+        used: true,
+        usedAt: now,
+      },
     }),
-    // Invalidate all refresh tokens for this user (force re-login)
-    prisma.refreshToken.deleteMany({
-      where: { userId: resetToken.userId },
+    prisma.passwordResetToken.updateMany({
+      where: {
+        userId: resetToken.userId,
+        used: false,
+      },
+      data: {
+        used: true,
+        usedAt: now,
+      },
+    }),
+    prisma.refreshToken.updateMany({
+      where: { userId: resetToken.userId, revokedAt: null },
+      data: { revokedAt: now },
     }),
   ]);
+}
 
-  return;
+export async function changePassword(
+  userId: string,
+  input: ChangePasswordInput,
+  currentRefreshToken?: string,
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      passwordHash: true,
+      isDeleted: true,
+    },
+  });
+
+  if (!user || user.isDeleted || !user.passwordHash) {
+    throw new ApiError(404, "User not found", "USER_NOT_FOUND");
+  }
+
+  const isCurrentPasswordValid = await bcrypt.compare(
+    input.currentPassword,
+    user.passwordHash,
+  );
+
+  if (!isCurrentPasswordValid) {
+    throw new ApiError(
+      401,
+      "Current password is incorrect",
+      "INVALID_CURRENT_PASSWORD",
+    );
+  }
+
+  await assertNewPassword(user.passwordHash, input.password);
+
+  const passwordHash = await bcrypt.hash(input.password, BCRYPT_SALT_ROUNDS);
+  const currentFamilyId = currentRefreshToken
+    ? await findFamilyIdForToken(currentRefreshToken)
+    : null;
+  const now = new Date();
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    }),
+    prisma.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+        ...(currentFamilyId ? { familyId: { not: currentFamilyId } } : {}),
+      },
+      data: { revokedAt: now },
+    }),
+  ]);
+}
+
+export async function listSessions(userId: string, currentRefreshToken?: string) {
+  const now = new Date();
+  const currentFamilyId = currentRefreshToken
+    ? await findFamilyIdForToken(currentRefreshToken)
+    : null;
+
+  const tokens = await prisma.refreshToken.findMany({
+    where: {
+      userId,
+      revokedAt: null,
+      usedAt: null,
+      expiresAt: { gt: now },
+      absoluteExpiresAt: { gt: now },
+    },
+    orderBy: [{ lastUsedAt: "desc" }, { createdAt: "desc" }],
+    select: {
+      familyId: true,
+      userAgent: true,
+      createdAt: true,
+      lastUsedAt: true,
+      expiresAt: true,
+    },
+  });
+
+  const sessions = new Map<
+    string,
+    {
+      id: string;
+      device: string;
+      createdAt: Date;
+      lastUsedAt: Date;
+      expiresAt: Date;
+      current: boolean;
+    }
+  >();
+
+  for (const token of tokens) {
+    if (sessions.has(token.familyId)) continue;
+
+    sessions.set(token.familyId, {
+      id: token.familyId,
+      device: token.userAgent || "Unknown browser",
+      createdAt: token.createdAt,
+      lastUsedAt: token.lastUsedAt,
+      expiresAt: token.expiresAt,
+      current: token.familyId === currentFamilyId,
+    });
+  }
+
+  return Array.from(sessions.values()).map((session) => ({
+    ...session,
+    createdAt: session.createdAt.toISOString(),
+    lastUsedAt: session.lastUsedAt.toISOString(),
+    expiresAt: session.expiresAt.toISOString(),
+  }));
+}
+
+export async function revokeSession(
+  userId: string,
+  familyId: string,
+  currentRefreshToken?: string,
+) {
+  const currentFamilyId = currentRefreshToken
+    ? await findFamilyIdForToken(currentRefreshToken)
+    : null;
+
+  const result = await prisma.refreshToken.updateMany({
+    where: {
+      userId,
+      familyId,
+      revokedAt: null,
+    },
+    data: { revokedAt: new Date() },
+  });
+
+  if (result.count === 0) {
+    throw new ApiError(404, "Session not found", "SESSION_NOT_FOUND");
+  }
+
+  return {
+    revokedCurrentSession: familyId === currentFamilyId,
+  };
+}
+
+async function createRefreshSession(
+  userId: string,
+  metadata: SessionMetadata,
+) {
+  const refreshToken = generateRefreshToken();
+  const csrfToken = generateCsrfToken();
+  const familyId = randomUUID();
+  const now = new Date();
+  const { userAgent, ipAddressHash } = normalizeMetadata(metadata);
+  const expiresAt = new Date(now.getTime() + REFRESH_TOKEN_EXPIRY_MS);
+  const absoluteExpiresAt = new Date(
+    now.getTime() + REFRESH_TOKEN_ABSOLUTE_EXPIRY_MS,
+  );
+
+  await prisma.refreshToken.create({
+    data: {
+      tokenHash: hashToken(refreshToken),
+      userId,
+      familyId,
+      csrfTokenHash: hashToken(csrfToken),
+      userAgent,
+      ipAddressHash,
+      expiresAt,
+      absoluteExpiresAt,
+      lastUsedAt: now,
+    },
+  });
+
+  await enforceSessionLimit(userId);
+
+  return { refreshToken, csrfToken };
+}
+
+async function enforceSessionLimit(userId: string) {
+  const now = new Date();
+  const activeTokens = await prisma.refreshToken.findMany({
+    where: {
+      userId,
+      revokedAt: null,
+      usedAt: null,
+      expiresAt: { gt: now },
+      absoluteExpiresAt: { gt: now },
+    },
+    select: {
+      familyId: true,
+      lastUsedAt: true,
+      createdAt: true,
+    },
+  });
+
+  const families = new Map<string, Date>();
+  for (const token of activeTokens) {
+    const seen = families.get(token.familyId);
+    const activity =
+      token.lastUsedAt > token.createdAt ? token.lastUsedAt : token.createdAt;
+
+    if (!seen || activity > seen) {
+      families.set(token.familyId, activity);
+    }
+  }
+
+  const excessFamilyIds = Array.from(families.entries())
+    .sort((a, b) => b[1].getTime() - a[1].getTime())
+    .slice(MAX_ACTIVE_SESSIONS)
+    .map(([familyId]) => familyId);
+
+  if (excessFamilyIds.length === 0) return;
+
+  await prisma.refreshToken.updateMany({
+    where: {
+      userId,
+      familyId: { in: excessFamilyIds },
+      revokedAt: null,
+    },
+    data: { revokedAt: now },
+  });
+}
+
+async function handleRefreshReuse(
+  familyId: string,
+  usedAt: Date | null,
+  now: Date,
+): Promise<never> {
+  if (usedAt && now.getTime() - usedAt.getTime() <= REFRESH_REUSE_GRACE_MS) {
+    throw new ApiError(
+      409,
+      "Refresh token already rotated",
+      "REFRESH_ALREADY_ROTATED",
+    );
+  }
+
+  await revokeRefreshFamily(familyId);
+  throw new ApiError(
+    401,
+    "Refresh token reuse detected",
+    "SESSION_REUSE_DETECTED",
+  );
+}
+
+async function revokeRefreshFamily(familyId: string) {
+  await prisma.refreshToken.updateMany({
+    where: {
+      familyId,
+      revokedAt: null,
+    },
+    data: { revokedAt: new Date() },
+  });
+}
+
+async function revokeFamilyForToken(refreshToken: string) {
+  const familyId = await findFamilyIdForToken(refreshToken);
+  if (!familyId) return;
+
+  await revokeRefreshFamily(familyId);
+}
+
+async function findFamilyIdForToken(refreshToken: string) {
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash: hashToken(refreshToken) },
+    select: { familyId: true },
+  });
+
+  return storedToken?.familyId ?? null;
+}
+
+async function assertNewPassword(
+  currentPasswordHash: string,
+  newPassword: string,
+) {
+  const isReused = await bcrypt.compare(newPassword, currentPasswordHash);
+
+  if (isReused) {
+    throw new ApiError(
+      400,
+      "New password must be different from the current password",
+      "PASSWORD_REUSE",
+    );
+  }
+}
+
+async function antiEnumerationDelay() {
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+function safeUserSelect() {
+  return {
+    id: true,
+    name: true,
+    email: true,
+    role: true,
+    image: true,
+    emailVerified: true,
+    createdAt: true,
+  } as const;
+}
+
+function parseDurationMs(value: string, fallbackMs: number): number {
+  const match = /^(\d+)([mhd])?$/.exec(value.trim());
+
+  if (!match) return fallbackMs;
+
+  const amount = Number(match[1]);
+  const unit = match[2] ?? "ms";
+
+  switch (unit) {
+    case "m":
+      return amount * 60 * 1000;
+    case "h":
+      return amount * 60 * 60 * 1000;
+    case "d":
+      return amount * 24 * 60 * 60 * 1000;
+    default:
+      return amount;
+  }
 }

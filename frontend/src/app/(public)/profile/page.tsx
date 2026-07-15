@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, Subscription } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,10 @@ import {
   ExternalLink,
   ChevronRight,
   Film,
+  KeyRound,
+  Monitor,
+  Trash2,
+  LogOut,
 } from "lucide-react";
 
 // Inline social SVG icons — lucide-react no longer ships social media icons
@@ -93,6 +97,15 @@ interface ProfileData {
   };
 }
 
+interface SessionData {
+  id: string;
+  device: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+
 const ALL_GENRES = [
   "Action",
   "Adventure",
@@ -109,9 +122,14 @@ const ALL_GENRES = [
 ];
 
 export default function ProfilePage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const searchParams = useSearchParams();
-  const checkoutSuccess = searchParams.get("success") === "true";
+  const checkoutStatus = searchParams.get("checkout");
+  const checkoutSuccess =
+    checkoutStatus === "active" ||
+    checkoutStatus === "pending" ||
+    searchParams.get("success") === "true";
+  const checkoutPending = checkoutStatus === "pending";
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +144,12 @@ export default function ProfilePage() {
     github: "",
   });
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [securityMessage, setSecurityMessage] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -141,23 +165,27 @@ export default function ProfilePage() {
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data } = await apiClient.get<
-        ApiResponse<{
-          subscription: {
-            tier: string;
-            status: string;
-            currentPeriodEnd: string;
-          };
-        }>
+        ApiResponse<{ subscription: Subscription }>
       >("/payments/subscription");
       return data.data.subscription;
     },
     enabled: isAuthenticated,
     refetchInterval: (query) => {
       if (!checkoutSuccess) return false;
-      const tier = query.state.data?.tier;
-      if (tier && tier !== "FREE") return false;
+      if (query.state.data?.entitlement.active) return false;
       return 2000;
     },
+  });
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ["auth", "sessions"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ sessions: SessionData[] }>
+      >("/auth/sessions");
+      return data.data.sessions;
+    },
+    enabled: isAuthenticated,
   });
 
   useEffect(() => {
@@ -169,17 +197,25 @@ export default function ProfilePage() {
   useEffect(() => {
     if (
       checkoutSuccess &&
-      subscription?.tier &&
-      subscription.tier !== "FREE"
+      subscription?.entitlement.active
     ) {
       setSubscriptionActivated(true);
       queryClient.invalidateQueries({ queryKey: ["media"] });
     }
-  }, [checkoutSuccess, subscription?.tier, queryClient]);
+  }, [checkoutSuccess, subscription?.entitlement.active, queryClient]);
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
       await apiClient.post("/payments/cancel");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    },
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post("/payments/resume");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription"] });
@@ -214,6 +250,48 @@ export default function ProfilePage() {
     },
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post("/auth/change-password", passwordForm);
+    },
+    onSuccess: () => {
+      setPasswordForm({
+        currentPassword: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setSecurityMessage("Password updated. Other sessions were signed out.");
+      queryClient.invalidateQueries({ queryKey: ["auth", "sessions"] });
+      setTimeout(() => setSecurityMessage(null), 4000);
+    },
+    onError: (err: unknown) => {
+      const apiError = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
+      setError(
+        apiError.response?.data?.error?.message || "Failed to update password",
+      );
+    },
+  });
+
+  const revokeSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await apiClient.delete(`/auth/sessions/${sessionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth", "sessions"] });
+    },
+  });
+
+  const logoutAllMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post("/auth/logout-all");
+    },
+    onSuccess: async () => {
+      await logout();
+    },
+  });
+
   const startEditing = () => {
     if (profile) {
       setForm({
@@ -235,8 +313,13 @@ export default function ProfilePage() {
     );
   };
 
-  const isPremium =
-    subscription?.tier === "MONTHLY" || subscription?.tier === "YEARLY";
+  const isPremium = Boolean(subscription?.entitlement.active);
+  const subscriptionStatusLabel = subscription?.cancelAtPeriodEnd
+    ? "CANCELING"
+    : subscription?.status;
+  const periodEndLabel = subscription?.cancelAtPeriodEnd
+    ? "Access until"
+    : "Renews";
   const displayName = profile?.name || "Anonymous User";
   const initials = profile?.name
     ? profile.name.slice(0, 2).toUpperCase()
@@ -279,14 +362,11 @@ export default function ProfilePage() {
           <div className="h-16 w-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center">
             <Check className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white">
-            Payment successful
-          </h1>
+          <h1 className="text-2xl font-bold text-white">Checkout verified</h1>
           <p className="text-zinc-500 max-w-sm">
-            Your subscription is being activated. Sign in to view your updated
-            account and premium access.
+            Sign in to view your updated account and premium access.
           </p>
-          <Link href="/login?redirect=%2Fprofile%3Fsuccess%3Dtrue">
+          <Link href="/login?redirect=%2Fprofile%3Fcheckout%3Dpending">
             <Button className="bg-red-600 hover:bg-red-700 text-white px-6">
               Sign in to view profile
             </Button>
@@ -400,12 +480,12 @@ export default function ProfilePage() {
             </AlertDescription>
           </Alert>
         )}
-        {checkoutSuccess &&
+        {checkoutPending &&
           isAuthenticated &&
-          subscription?.tier === "FREE" && (
+          !subscription?.entitlement.active && (
             <Alert className="mb-6 border-amber-500/30 bg-amber-950/20 text-amber-300">
               <AlertDescription>
-                Payment received. Activating your subscription — this usually
+                Payment received. Activating your subscription - this usually
                 takes a few seconds...
               </AlertDescription>
             </Alert>
@@ -539,17 +619,17 @@ export default function ProfilePage() {
                     <span className="text-zinc-400">Status</span>
                     <span
                       className={
-                        subscription.status === "ACTIVE"
+                        subscription.entitlement.active
                           ? "font-medium text-emerald-400"
                           : "text-zinc-300"
                       }
                     >
-                      {subscription.status}
+                      {subscriptionStatusLabel}
                     </span>
                   </div>
-                  {isPremium && (
+                  {isPremium && subscription.currentPeriodEnd && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-400">Renews</span>
+                      <span className="text-zinc-400">{periodEndLabel}</span>
                       <span className="text-zinc-200">
                         {new Date(
                           subscription.currentPeriodEnd,
@@ -561,13 +641,25 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   )}
-                  {subscription.tier === "FREE" ? (
+                  {!isPremium ? (
                     <Link href="/pricing">
                       <Button className="h-10 w-full rounded-xl bg-red-600 hover:bg-red-700">
                         Upgrade to Premium
                       </Button>
                     </Link>
-                  ) : subscription.status !== "CANCELED" ? (
+                  ) : subscription.cancelAtPeriodEnd ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 w-full rounded-xl border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
+                      onClick={() => resumeMutation.mutate()}
+                      disabled={resumeMutation.isPending}
+                    >
+                      {resumeMutation.isPending
+                        ? "Resuming..."
+                        : "Resume renewal"}
+                    </Button>
+                  ) : isPremium ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -923,6 +1015,177 @@ export default function ProfilePage() {
 
                 <Card className="border-zinc-800/80 bg-zinc-900/40">
                   <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base font-bold text-white">
+                      <KeyRound className="h-4 w-4 text-red-400" />
+                      Security
+                    </CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      Password and active browser sessions.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {securityMessage && (
+                      <Alert className="border-emerald-500/30 bg-emerald-950/20 text-emerald-400">
+                        <AlertDescription>{securityMessage}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <form
+                      className="grid gap-4 md:grid-cols-3"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        changePasswordMutation.mutate();
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="current-password"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Current password
+                        </Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          autoComplete="current-password"
+                          value={passwordForm.currentPassword}
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              currentPassword: event.target.value,
+                            }))
+                          }
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="new-password"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          New password
+                        </Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          autoComplete="new-password"
+                          value={passwordForm.password}
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              password: event.target.value,
+                            }))
+                          }
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="confirm-new-password"
+                          className="text-xs font-semibold text-zinc-400"
+                        >
+                          Confirm password
+                        </Label>
+                        <Input
+                          id="confirm-new-password"
+                          type="password"
+                          autoComplete="new-password"
+                          value={passwordForm.confirmPassword}
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              confirmPassword: event.target.value,
+                            }))
+                          }
+                          className="h-11 border-zinc-800 bg-zinc-950 text-white"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <Button
+                          type="submit"
+                          disabled={changePasswordMutation.isPending}
+                          className="h-10 rounded-xl bg-red-600 px-5 font-semibold hover:bg-red-700"
+                        >
+                          {changePasswordMutation.isPending
+                            ? "Updating..."
+                            : "Update password"}
+                        </Button>
+                      </div>
+                    </form>
+
+                    <Separator className="bg-zinc-800" />
+
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                          Active sessions
+                        </h4>
+                        <Button
+                          variant="outline"
+                          onClick={() => logoutAllMutation.mutate()}
+                          disabled={logoutAllMutation.isPending}
+                          className="h-9 rounded-xl border-zinc-800 text-zinc-300 hover:bg-zinc-900"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign out all
+                        </Button>
+                      </div>
+
+                      <div className="divide-y divide-zinc-800 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/50">
+                        {sessions.length === 0 ? (
+                          <p className="px-4 py-4 text-sm text-zinc-500">
+                            No active sessions found.
+                          </p>
+                        ) : (
+                          sessions.map((session) => (
+                            <div
+                              key={session.id}
+                              className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <div className="flex min-w-0 items-start gap-3">
+                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-zinc-500">
+                                  <Monitor className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="truncate text-sm font-medium text-zinc-200">
+                                      {session.device}
+                                    </p>
+                                    {session.current && (
+                                      <Badge className="bg-emerald-500/10 text-emerald-400">
+                                        Current
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-zinc-500">
+                                    Last used {formatSessionDate(session.lastUsedAt)}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                disabled={
+                                  session.current ||
+                                  revokeSessionMutation.isPending
+                                }
+                                onClick={() =>
+                                  revokeSessionMutation.mutate(session.id)
+                                }
+                                className="h-9 self-start rounded-lg text-zinc-400 hover:bg-red-500/10 hover:text-red-400 sm:self-center"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Revoke
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800/80 bg-zinc-900/40">
+                  <CardHeader>
                     <CardTitle className="text-base font-bold text-white">
                       Social profiles
                     </CardTitle>
@@ -1006,4 +1269,13 @@ export default function ProfilePage() {
       </div>
     </main>
   );
+}
+
+function formatSessionDate(value: string): string {
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

@@ -34,8 +34,7 @@ export default function LoginPage() {
 
     try {
       await login(data);
-      const redirect = searchParams.get("redirect") || "/";
-      router.push(redirect);
+      router.push(safeRedirectPath(searchParams.get("redirect")));
     } catch (err: unknown) {
       const apiError = err as {
         response?: { data?: { error?: { message?: string } } };
@@ -158,4 +157,19 @@ export default function LoginPage() {
       </div>
     </main>
   );
+}
+
+function safeRedirectPath(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  try {
+    const parsed = new URL(value, "http://cinetube.local");
+    if (parsed.origin !== "http://cinetube.local") return "/";
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/";
+  }
 }

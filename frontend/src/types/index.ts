@@ -136,12 +136,19 @@ export interface Comment {
 // Subscription
 
 export interface Subscription {
-  id: string;
+  id: string | null;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  createdAt: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  renewsAt: string | null;
+  cancelsAt: string | null;
+  entitlement: {
+    active: boolean;
+    reason: string;
+  };
+  createdAt: string | null;
 }
 
 // API Response Envelope
