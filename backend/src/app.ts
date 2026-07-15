@@ -6,6 +6,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
 import { corsOptions } from "./config/cors";
+import prisma from "./config/prisma";
 import { apiRouter } from "./routes";
 import { webhookRouter } from "./routes/webhook.routes";
 import { errorHandler } from "./middlewares/errorHandler";
@@ -13,6 +14,9 @@ import { requestId } from "./middlewares/requestId";
 import { apiLimiter } from "./middlewares/rateLimiter";
 
 const app = express();
+
+// Trust first proxy hop (Render, Vercel, etc.) for accurate req.ip and rate-limit keys
+app.set("trust proxy", 1);
 
 app.use(requestId);
 app.use(helmet());
@@ -32,15 +36,28 @@ app.use(cookieParser());
 
 app.use("/api", apiLimiter);
 
-app.get("/api/health", (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    },
-  });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      success: true,
+      data: {
+        status: "healthy",
+        database: "connected",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+      },
+    });
+  } catch {
+    res.status(503).json({
+      success: false,
+      data: {
+        status: "unhealthy",
+        database: "disconnected",
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 });
 
 app.use("/api", apiRouter);

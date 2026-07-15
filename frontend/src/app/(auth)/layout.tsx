@@ -31,7 +31,8 @@ export default function AuthLayout({
             Your cinematic journey starts here
           </h2>
           <p className="text-zinc-300 text-lg">
-            Discover, rate, and review movies and series with the CineTube community.
+            Discover, rate, and review movies and series with the CineTube
+            community.
           </p>
         </div>
         <div className="relative z-10 text-sm text-zinc-500">

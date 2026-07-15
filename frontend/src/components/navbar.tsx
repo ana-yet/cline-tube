@@ -5,7 +5,17 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
-import { Film, Bell, Search, Menu, X, User, LayoutDashboard, LogOut, Heart } from "lucide-react";
+import {
+  Film,
+  Bell,
+  Search,
+  Menu,
+  X,
+  User,
+  LayoutDashboard,
+  LogOut,
+  Heart,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -58,14 +68,17 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 border-b",
         isScrolled
-          ? "bg-background/80 backdrop-blur-md border-border shadow-lg"
-          : "bg-background border-border"
+          ? "bg-zinc-950/80 backdrop-blur-md border-zinc-800/60 shadow-lg shadow-black/20"
+          : "bg-zinc-950 border-zinc-900",
       )}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Left Side: Brand Logo */}
         <div className="flex items-center gap-6 shrink-0">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors"
+          >
             <Film className="h-6 w-6 fill-red-500" />
             <span>CineTube</span>
           </Link>
@@ -81,7 +94,7 @@ export function Navbar() {
                   href={link.href}
                   className={cn(
                     "transition-colors hover:text-red-500",
-                    isActive ? "text-red-500 font-semibold" : "text-zinc-400"
+                    isActive ? "text-red-500 font-semibold" : "text-zinc-400",
                   )}
                 >
                   {link.label}
@@ -92,7 +105,10 @@ export function Navbar() {
         </div>
 
         {/* Middle: Elegant Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="hidden sm:flex relative max-w-sm w-full mx-4">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="hidden sm:flex relative max-w-sm w-full mx-4"
+        >
           <Input
             type="search"
             placeholder="Search movies, series..."
@@ -106,7 +122,10 @@ export function Navbar() {
         {/* Right Side: Actions (Search, Notification, Profile Dropdown) */}
         <div className="flex items-center gap-4">
           {/* Mobile search trigger or simple search icon */}
-          <form onSubmit={handleSearchSubmit} className="sm:hidden flex items-center">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="sm:hidden flex items-center"
+          >
             <input
               type="text"
               placeholder="Search..."
@@ -115,9 +134,6 @@ export function Navbar() {
               className="bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-full text-xs text-white max-w-[100px] focus:max-w-[150px] transition-all"
             />
           </form>
-
-          {/* Theme Toggle */}
-          <ThemeToggle />
 
           {/* Notifications area placeholder */}
           <div className="relative cursor-pointer text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-900 rounded-full">
@@ -141,8 +157,11 @@ export function Navbar() {
                 {isDropdownOpen && (
                   <>
                     {/* Backdrop to close */}
-                    <div className="fixed inset-0 z-30" onClick={() => setIsDropdownOpen(false)} />
-                    
+                    <div
+                      className="fixed inset-0 z-30"
+                      onClick={() => setIsDropdownOpen(false)}
+                    />
+
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -151,22 +170,35 @@ export function Navbar() {
                       className="absolute right-0 mt-2 w-56 rounded-xl bg-zinc-900 border border-zinc-800 p-2 shadow-xl shadow-black/40 z-40 text-sm"
                     >
                       <div className="px-3 py-2 border-b border-zinc-800/80 mb-1">
-                        <p className="font-semibold text-zinc-200 line-clamp-1">{user.name || "User"}</p>
-                        <p className="text-xs text-zinc-500 line-clamp-1">{user.email}</p>
+                        <p className="font-semibold text-zinc-200 line-clamp-1">
+                          {user.name || "User"}
+                        </p>
+                        <p className="text-xs text-zinc-500 line-clamp-1">
+                          {user.email}
+                        </p>
                       </div>
 
-                      <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors">
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"
+                      >
                         <User className="h-4 w-4 text-zinc-500" />
                         <span>My Profile</span>
                       </Link>
 
-                      <Link href="/watchlist" className="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors">
+                      <Link
+                        href="/watchlist"
+                        className="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"
+                      >
                         <Heart className="h-4 w-4 text-zinc-500" />
                         <span>Watchlist</span>
                       </Link>
 
                       {user.role === "ADMIN" && (
-                        <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-lg transition-colors">
+                        <Link
+                          href="/admin"
+                          className="flex items-center gap-2 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-lg transition-colors"
+                        >
                           <LayoutDashboard className="h-4 w-4 text-red-400" />
                           <span>Admin Dashboard</span>
                         </Link>
@@ -189,12 +221,19 @@ export function Navbar() {
           ) : (
             <div className="hidden md:flex items-center gap-3">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-zinc-300 hover:text-white hover:bg-zinc-900">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-zinc-300 hover:text-white hover:bg-zinc-900"
+                >
                   Sign In
                 </Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-red-600/10">
+                <Button
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-red-600/10"
+                >
                   Get Started
                 </Button>
               </Link>
@@ -206,7 +245,11 @@ export function Navbar() {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg focus:outline-none"
           >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
@@ -231,7 +274,7 @@ export function Navbar() {
                     href={link.href}
                     className={cn(
                       "transition-colors hover:text-red-500 py-1 border-b border-zinc-900/50",
-                      isActive ? "text-red-500 font-semibold" : "text-zinc-400"
+                      isActive ? "text-red-500 font-semibold" : "text-zinc-400",
                     )}
                   >
                     {link.label}
@@ -243,7 +286,10 @@ export function Navbar() {
             {!isAuthenticated && (
               <div className="flex flex-col gap-2 pt-2">
                 <Link href="/login" className="w-full">
-                  <Button variant="outline" className="w-full border-zinc-800 text-zinc-300 hover:text-white">
+                  <Button
+                    variant="outline"
+                    className="w-full border-zinc-800 text-zinc-300 hover:text-white"
+                  >
                     Sign In
                   </Button>
                 </Link>
@@ -268,7 +314,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       className={cn(
         "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-        className
+        className,
       )}
       {...props}
     />

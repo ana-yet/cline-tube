@@ -150,37 +150,37 @@ enum ContentPostStatus {
 // ─────────────────────────────────────────────
 
 model User {
-  id           String    @id @default(uuid())
-  name         String?
-  email        String    @unique
-  passwordHash String?
-  role         Role      @default(USER)
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String?
+  role          Role      @default(USER)
   emailVerified DateTime?
-  image        String?
-  imagePublicId String?  @unique
-  isDeleted    Boolean   @default(false)
-  deletedAt    DateTime?
-  lastActiveAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  image         String?
+  imagePublicId String?   @unique
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+  lastActiveAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  profile       UserProfile?
-  accounts      Account[]
-  refreshTokens RefreshToken[]
-  resetTokens   PasswordResetToken[]
-  watchlist     Watchlist[]
-  reviews       Review[]
-  reports       ReviewReport[]
-  moderationActions ReviewModerationAction[]
-  resolvedReports ReviewReport[] @relation("ReviewReportResolver")
-  comments      Comment[]
-  likes         ReviewLike[]
-  subscription  Subscription?
-  transactions  Transaction[]
-  checkoutAttempts CheckoutAttempt[]
+  profile            UserProfile?
+  accounts           Account[]
+  refreshTokens      RefreshToken[]
+  resetTokens        PasswordResetToken[]
+  watchlist          Watchlist[]
+  reviews            Review[]
+  reports            ReviewReport[]
+  moderationActions  ReviewModerationAction[]
+  resolvedReports    ReviewReport[]           @relation("ReviewReportResolver")
+  comments           Comment[]
+  likes              ReviewLike[]
+  subscription       Subscription?
+  transactions       Transaction[]
+  checkoutAttempts   CheckoutAttempt[]
   paymentAdjustments PaymentAdjustment[]
-  assignedContacts ContactSubmission[] @relation("ContactSubmissionAssignee")
-  contentPosts ContentPost[] @relation("ContentPostAuthor")
+  assignedContacts   ContactSubmission[]      @relation("ContactSubmissionAssignee")
+  contentPosts       ContentPost[]            @relation("ContentPostAuthor")
 
   @@index([lastActiveAt])
 }
@@ -251,10 +251,10 @@ model RefreshToken {
 }
 
 model PasswordResetToken {
-  id        String    @id @default(uuid())
-  tokenHash String    @unique @map("token")
-  userId    String
-  expiresAt DateTime
+  id            String    @id @default(uuid())
+  tokenHash     String    @unique @map("token")
+  userId        String
+  expiresAt     DateTime
   used          Boolean   @default(false)
   usedAt        DateTime?
   invalidatedAt DateTime?
@@ -268,29 +268,29 @@ model PasswordResetToken {
 }
 
 model Media {
-  id            String      @id @default(uuid())
-  title         String      @db.VarChar(500)
-  slug          String      @unique
-  synopsis      String      @db.Text
-  type          MediaType
-  pricingType   PricingType @default(FREE)
-  streamingLink String
-  posterUrl       String?
-  posterPublicId  String?
-  backdropUrl     String?
-  backdropPublicId String?
-  releaseYear   Int
-  director      String      @db.VarChar(255)
-  cast          String[]
-  averageRating Decimal     @default(0.0) @db.Decimal(3, 1)
-  reviewsCount  Int         @default(0)
-  viewCount     Int         @default(0)
+  id                String                 @id @default(uuid())
+  title             String                 @db.VarChar(500)
+  slug              String                 @unique
+  synopsis          String                 @db.Text
+  type              MediaType
+  pricingType       PricingType            @default(FREE)
+  streamingLink     String
+  posterUrl         String?
+  posterPublicId    String?
+  backdropUrl       String?
+  backdropPublicId  String?
+  releaseYear       Int
+  director          String                 @db.VarChar(255)
+  cast              String[]
+  averageRating     Decimal                @default(0.0) @db.Decimal(3, 1)
+  reviewsCount      Int                    @default(0)
+  viewCount         Int                    @default(0)
   publicationStatus MediaPublicationStatus @default(PUBLISHED)
-  publishedAt    DateTime?
-  archivedAt     DateTime?
-  deletedAt      DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  publishedAt       DateTime?
+  archivedAt        DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
   genres    MediaGenre[]
   watchlist Watchlist[]
@@ -311,15 +311,15 @@ model Media {
 }
 
 model Genre {
-  id    String @id @default(uuid())
-  name  String @unique
+  id   String @id @default(uuid())
+  name String @unique
 
   media MediaGenre[]
 }
 
 model MediaGenre {
-  mediaId String
-  genreId String
+  mediaId   String
+  genreId   String
   createdAt DateTime @default(now())
 
   media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
@@ -343,11 +343,11 @@ model Review {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  media   Media          @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  comments Comment[]
-  likes    ReviewLike[]
-  reports  ReviewReport[]
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media             Media                    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  comments          Comment[]
+  likes             ReviewLike[]
+  reports           ReviewReport[]
   moderationActions ReviewModerationAction[]
 
   @@unique([userId, mediaId])
@@ -423,9 +423,9 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  review Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  parent Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review  Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies Comment[] @relation("CommentReplies")
 
   @@index([userId])
@@ -463,28 +463,28 @@ model MediaViewDedup {
 }
 
 model Subscription {
-  id                   String             @id @default(uuid())
-  userId               String             @unique
-  tier                 SubscriptionTier   @default(FREE)
-  status               SubscriptionStatus @default(ACTIVE)
-  stripeCustomerId     String?            @unique
-  stripeSubscriptionId String?            @unique
-  providerStatus       String?
-  billingStatus        String?
-  cancelAtPeriodEnd    Boolean            @default(false)
-  canceledAt           DateTime?
-  cancelAt             DateTime?
-  endedAt              DateTime?
-  gracePeriodEnd       DateTime?
-  revokedAt            DateTime?
-  revokedReason        String?
-  priceLookupKey       String?
-  priceSnapshot        Json?
+  id                    String             @id @default(uuid())
+  userId                String             @unique
+  tier                  SubscriptionTier   @default(FREE)
+  status                SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId      String?            @unique
+  stripeSubscriptionId  String?            @unique
+  providerStatus        String?
+  billingStatus         String?
+  cancelAtPeriodEnd     Boolean            @default(false)
+  canceledAt            DateTime?
+  cancelAt              DateTime?
+  endedAt               DateTime?
+  gracePeriodEnd        DateTime?
+  revokedAt             DateTime?
+  revokedReason         String?
+  priceLookupKey        String?
+  priceSnapshot         Json?
   lastProviderEventTime DateTime?
-  currentPeriodStart   DateTime
-  currentPeriodEnd     DateTime
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -496,28 +496,28 @@ model Subscription {
 }
 
 model Transaction {
-  id             String            @id @default(uuid())
-  userId         String?
-  subscriptionId String?
-  customerEmailSnapshot String?
-  customerNameSnapshot  String?
-  amount         Decimal           @db.Decimal(10, 2)
-  amountMinor    Int?
-  currency       String            @default("USD") @db.VarChar(3)
-  status         TransactionStatus @default(PENDING)
-  provider       String            @db.VarChar(50)
-  providerTxnId  String            @unique
-  providerInvoiceId String?        @unique
-  providerPaymentIntentId String?  @unique
-  type           String            @default("SUBSCRIPTION") @db.VarChar(50)
-  servicePeriodStart DateTime?
-  servicePeriodEnd   DateTime?
-  paidAt         DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id                      String            @id @default(uuid())
+  userId                  String?
+  subscriptionId          String?
+  customerEmailSnapshot   String?
+  customerNameSnapshot    String?
+  amount                  Decimal           @db.Decimal(10, 2)
+  amountMinor             Int?
+  currency                String            @default("USD") @db.VarChar(3)
+  status                  TransactionStatus @default(PENDING)
+  provider                String            @db.VarChar(50)
+  providerTxnId           String            @unique
+  providerInvoiceId       String?           @unique
+  providerPaymentIntentId String?           @unique
+  type                    String            @default("SUBSCRIPTION") @db.VarChar(50)
+  servicePeriodStart      DateTime?
+  servicePeriodEnd        DateTime?
+  paidAt                  DateTime?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
-  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  user         User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subscription Subscription?       @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   adjustments  PaymentAdjustment[]
 
   @@index([userId])
@@ -626,7 +626,7 @@ model ContactSubmission {
 
 model ContentPost {
   id             String            @id @default(uuid())
-  type           ContentPostType    @default(BLOG)
+  type           ContentPostType   @default(BLOG)
   slug           String            @unique
   title          String            @db.VarChar(240)
   excerpt        String?           @db.VarChar(500)

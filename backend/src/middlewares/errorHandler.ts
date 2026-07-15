@@ -50,7 +50,7 @@ export const errorHandler = (
         res.status(409).json({
           success: false,
           error: {
-            message: `A record with this ${err.meta?.target} already exists`,
+            message: "A record with the given value already exists",
             code: "DUPLICATE_ENTRY",
           },
         });
