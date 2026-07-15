@@ -1,5 +1,7 @@
+import { createHmac } from "node:crypto";
 import prisma from "../config/prisma";
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
+import { env } from "../config/env";
 import { ApiError } from "../utils/errors";
 import { deleteImage } from "./cloudinary.service";
 import { userHasPremiumAccess } from "./entitlement.service";
@@ -44,6 +46,10 @@ const mediaListSelect = {
   averageRating: true,
   reviewsCount: true,
   viewCount: true,
+  publicationStatus: true,
+  publishedAt: true,
+  archivedAt: true,
+  deletedAt: true,
   createdAt: true,
   genres: {
     select: {
@@ -60,6 +66,44 @@ const mediaDetailSelect = {
   cast: true,
   updatedAt: true,
 } as const;
+
+type MediaLifecycleStatus = CreateMediaInput["publicationStatus"];
+
+const liveMediaWhere = {
+  publicationStatus: "PUBLISHED",
+  deletedAt: null,
+} satisfies Prisma.MediaWhereInput;
+
+function lifecycleFields(
+  publicationStatus?: MediaLifecycleStatus,
+  existing?: { publishedAt: Date | null },
+) {
+  if (!publicationStatus) {
+    return {};
+  }
+
+  const now = new Date();
+
+  if (publicationStatus === "PUBLISHED") {
+    return {
+      publicationStatus,
+      publishedAt: existing?.publishedAt ?? now,
+      archivedAt: null,
+      deletedAt: null,
+    };
+  }
+
+  if (publicationStatus === "ARCHIVED") {
+    return { publicationStatus, archivedAt: now };
+  }
+
+  return {
+    publicationStatus,
+    publishedAt: null,
+    archivedAt: null,
+    deletedAt: null,
+  };
+}
 
 // Create Media (Admin)
 
@@ -83,6 +127,7 @@ export async function createMedia(input: CreateMediaInput) {
   const media = await prisma.media.create({
     data: {
       ...mediaData,
+      ...lifecycleFields(mediaData.publicationStatus),
       slug,
       cast: mediaData.cast,
       genres: {
@@ -106,6 +151,7 @@ export async function updateMedia(id: string, input: UpdateMediaInput) {
       title: true,
       posterPublicId: true,
       backdropPublicId: true,
+      publishedAt: true,
     },
   });
 
@@ -160,6 +206,7 @@ export async function updateMedia(id: string, input: UpdateMediaInput) {
         where: { id },
         data: {
           ...mediaData,
+          ...lifecycleFields(mediaData.publicationStatus, existing),
           ...(slug && { slug }),
           genres: {
             create: genreIds.map((genreId) => ({ genreId })),
@@ -177,6 +224,7 @@ export async function updateMedia(id: string, input: UpdateMediaInput) {
     where: { id },
     data: {
       ...mediaData,
+      ...lifecycleFields(mediaData.publicationStatus, existing),
       ...(slug && { slug }),
     },
     select: mediaDetailSelect,
@@ -190,22 +238,23 @@ export async function updateMedia(id: string, input: UpdateMediaInput) {
 export async function deleteMedia(id: string) {
   const existing = await prisma.media.findUnique({
     where: { id },
-    select: { id: true, posterPublicId: true, backdropPublicId: true },
+    select: { id: true },
   });
 
   if (!existing) {
     throw new ApiError(404, "Media not found", "MEDIA_NOT_FOUND");
   }
 
-  // Delete Cloudinary images (fire-and-forget, don't block DB delete)
-  if (existing.posterPublicId) {
-    deleteImage(existing.posterPublicId).catch(() => {});
-  }
-  if (existing.backdropPublicId) {
-    deleteImage(existing.backdropPublicId).catch(() => {});
-  }
+  const now = new Date();
 
-  await prisma.media.delete({ where: { id } });
+  await prisma.media.update({
+    where: { id },
+    data: {
+      publicationStatus: "ARCHIVED",
+      archivedAt: now,
+      deletedAt: now,
+    },
+  });
 }
 
 // Get Media by Slug (Public — premium link gated)
@@ -214,8 +263,8 @@ export async function getMediaBySlug(
   slug: string,
   viewer?: { id: string; role: Role | string },
 ) {
-  const media = await prisma.media.findUnique({
-    where: { slug },
+  const media = await prisma.media.findFirst({
+    where: { slug, ...liveMediaWhere },
     select: mediaDetailSelect,
   });
 
@@ -247,8 +296,8 @@ export async function getStreamLink(
   slug: string,
   userId: string,
 ) {
-  const media = await prisma.media.findUnique({
-    where: { slug },
+  const media = await prisma.media.findFirst({
+    where: { slug, ...liveMediaWhere },
     select: {
       id: true,
       title: true,
@@ -279,44 +328,78 @@ export async function getStreamLink(
   };
 }
 
-// View Count (deduplicated per IP+slug, 1-hour window)
+// View Count (durable approximate daily dedup)
 
-const recentViews = new Map<string, number>();
-const VIEW_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const VIEW_DEDUP_RETENTION_DAYS = 7;
 
-// Periodic cleanup to prevent memory leak (every 10 minutes)
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, timestamp] of recentViews) {
-      if (now - timestamp > VIEW_COOLDOWN_MS) {
-        recentViews.delete(key);
-      }
-    }
-  },
-  10 * 60 * 1000,
-).unref();
+function isUniqueViolation(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+  );
+}
+
+function utcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function viewerDedupKey(input: { ip?: string; userAgent?: string }) {
+  const secret = env.MEDIA_VIEW_HMAC_SECRET || env.JWT_SECRET;
+  const fingerprint = `${input.ip ?? "unknown"}:${input.userAgent ?? "unknown"}`;
+  return createHmac("sha256", secret).update(fingerprint).digest("hex");
+}
 
 /**
  * Record a view for a media item.
- * Deduplicates by IP + slug within a 1-hour window.
- * Prevents: page refresh spam, crawler inflation, admin preview counting.
+ * Deduplicates by HMAC(IP + User-Agent) per UTC day in the database.
+ * No raw viewer fingerprint is persisted.
  */
-export async function recordView(slug: string, ip: string | undefined) {
-  const key = `${ip ?? "unknown"}:${slug}`;
-  const now = Date.now();
-  const lastView = recentViews.get(key);
+export async function recordView(
+  slug: string,
+  viewer: { ip?: string; userAgent?: string },
+) {
+  const media = await prisma.media.findFirst({
+    where: { slug, ...liveMediaWhere },
+    select: { id: true },
+  });
 
-  if (lastView && now - lastView < VIEW_COOLDOWN_MS) {
-    return; // Already counted recently — skip
+  if (!media) {
+    throw new ApiError(404, "Media not found", "MEDIA_NOT_FOUND");
   }
 
-  recentViews.set(key, now);
+  const now = new Date();
+  const bucketDate = utcDay(now);
+  const viewerKey = viewerDedupKey(viewer);
 
-  await prisma.media.update({
-    where: { slug },
-    data: { viewCount: { increment: 1 } },
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.mediaViewDedup.create({
+        data: {
+          mediaId: media.id,
+          bucketDate,
+          viewerKey,
+          expiresAt: addDays(bucketDate, VIEW_DEDUP_RETENTION_DAYS),
+        },
+      });
+
+      await tx.media.update({
+        where: { id: media.id },
+        data: { viewCount: { increment: 1 } },
+      });
+    });
+
+    return { recorded: true as const };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { recorded: false as const };
+    }
+    throw error;
+  }
 }
 
 // List Media (Public — with search/filter/sort/pagination)
@@ -326,7 +409,7 @@ export async function listMedia(query: MediaQueryInput) {
   const skip = (page - 1) * limit;
 
   // Build where clause
-  const where: Record<string, unknown> = {};
+  const where: Prisma.MediaWhereInput = { ...liveMediaWhere };
 
   if (search) {
     where.OR = [

@@ -100,6 +100,51 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum ReviewModerationActionType {
+  SUBMITTED
+  EDITED
+  DELETED
+  APPROVED
+  REJECTED
+  REPORT_SUBMITTED
+  REPORT_RESOLVED
+  REPORT_DISMISSED
+}
+
+enum MediaPublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContactSubmissionStatus {
+  NEW
+  ASSIGNED
+  RESOLVED
+  DISMISSED
+}
+
+enum ContactSubmissionCategory {
+  GENERAL
+  BILLING
+  TECHNICAL
+  CONTENT
+  ABUSE
+  OTHER
+}
+
+enum ContentPostType {
+  BLOG
+  HELP
+  LEGAL
+}
+
+enum ContentPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 // ─────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────
@@ -112,8 +157,10 @@ model User {
   role         Role      @default(USER)
   emailVerified DateTime?
   image        String?
+  imagePublicId String?  @unique
   isDeleted    Boolean   @default(false)
   deletedAt    DateTime?
+  lastActiveAt DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -124,12 +171,18 @@ model User {
   watchlist     Watchlist[]
   reviews       Review[]
   reports       ReviewReport[]
+  moderationActions ReviewModerationAction[]
+  resolvedReports ReviewReport[] @relation("ReviewReportResolver")
   comments      Comment[]
   likes         ReviewLike[]
   subscription  Subscription?
   transactions  Transaction[]
   checkoutAttempts CheckoutAttempt[]
   paymentAdjustments PaymentAdjustment[]
+  assignedContacts ContactSubmission[] @relation("ContactSubmissionAssignee")
+  contentPosts ContentPost[] @relation("ContentPostAuthor")
+
+  @@index([lastActiveAt])
 }
 
 model UserProfile {
@@ -230,12 +283,17 @@ model Media {
   averageRating Decimal     @default(0.0) @db.Decimal(3, 1)
   reviewsCount  Int         @default(0)
   viewCount     Int         @default(0)
+  publicationStatus MediaPublicationStatus @default(PUBLISHED)
+  publishedAt    DateTime?
+  archivedAt     DateTime?
+  deletedAt      DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   genres    MediaGenre[]
   watchlist Watchlist[]
   reviews   Review[]
+  viewDedup MediaViewDedup[]
 
   @@index([slug])
   @@index([title])
@@ -245,6 +303,9 @@ model Media {
   @@index([averageRating])
   @@index([viewCount])
   @@index([createdAt])
+  @@index([publicationStatus, publishedAt])
+  @@index([publicationStatus, pricingType, createdAt])
+  @@index([publicationStatus, type, createdAt])
 }
 
 model Genre {
@@ -285,6 +346,7 @@ model Review {
   comments Comment[]
   likes    ReviewLike[]
   reports  ReviewReport[]
+  moderationActions ReviewModerationAction[]
 
   @@unique([userId, mediaId])
   @@index([userId])
@@ -307,21 +369,47 @@ model ReviewLike {
 }
 
 model ReviewReport {
-  id        String       @id @default(uuid())
-  reviewId  String
-  userId    String
-  reason    ReportReason
-  details   String?      @db.Text
-  status    ReportStatus @default(PENDING)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id             String       @id @default(uuid())
+  reviewId       String
+  userId         String
+  reason         ReportReason
+  details        String?      @db.Text
+  status         ReportStatus @default(PENDING)
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolutionNote String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review     Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resolvedBy User?  @relation("ReviewReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
 
+  @@unique([reviewId, userId])
   @@index([reviewId])
   @@index([userId])
   @@index([status])
+  @@index([status, createdAt])
+  @@index([reviewId, status])
+}
+
+model ReviewModerationAction {
+  id         String                     @id @default(uuid())
+  reviewId   String?
+  actorId    String?
+  type       ReviewModerationActionType
+  fromStatus ReviewStatus?
+  toStatus   ReviewStatus?
+  reason     String?                    @db.Text
+  metadata   Json?
+  createdAt  DateTime                   @default(now())
+
+  review Review? @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([reviewId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([type, createdAt])
 }
 
 model Comment {
@@ -357,6 +445,21 @@ model Watchlist {
   @@index([mediaId])
 }
 
+model MediaViewDedup {
+  id         String   @id @default(uuid())
+  mediaId    String
+  bucketDate DateTime @db.Date
+  viewerKey  String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, bucketDate, viewerKey])
+  @@index([expiresAt])
+  @@index([mediaId, bucketDate])
+}
+
 model Subscription {
   id                   String             @id @default(uuid())
   userId               String             @unique
@@ -390,8 +493,10 @@ model Subscription {
 
 model Transaction {
   id             String            @id @default(uuid())
-  userId         String
+  userId         String?
   subscriptionId String?
+  customerEmailSnapshot String?
+  customerNameSnapshot  String?
   amount         Decimal           @db.Decimal(10, 2)
   amountMinor    Int?
   currency       String            @default("USD") @db.VarChar(3)
@@ -407,13 +512,15 @@ model Transaction {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   adjustments  PaymentAdjustment[]
 
   @@index([userId])
+  @@index([userId, paidAt])
   @@index([status])
   @@index([createdAt])
+  @@index([paidAt])
   @@index([providerInvoiceId])
   @@index([providerPaymentIntentId])
 }
@@ -489,4 +596,49 @@ model PaymentAdjustment {
   @@index([transactionId])
   @@index([providerPaymentIntentId])
   @@index([createdAt])
+}
+
+model ContactSubmission {
+  id              String                    @id @default(uuid())
+  category        ContactSubmissionCategory @default(GENERAL)
+  name            String                    @db.VarChar(160)
+  email           String                    @db.VarChar(320)
+  emailNormalized String                    @db.VarChar(320)
+  subject         String                    @db.VarChar(240)
+  message         String                    @db.Text
+  status          ContactSubmissionStatus   @default(NEW)
+  assignedToId    String?
+  resolvedAt      DateTime?
+  resolutionNote  String?                   @db.Text
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  assignedTo User? @relation("ContactSubmissionAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([emailNormalized])
+  @@index([assignedToId, status])
+}
+
+model ContentPost {
+  id             String            @id @default(uuid())
+  type           ContentPostType    @default(BLOG)
+  slug           String            @unique
+  title          String            @db.VarChar(240)
+  excerpt        String?           @db.VarChar(500)
+  body           String            @db.Text
+  status         ContentPostStatus @default(DRAFT)
+  authorId       String?
+  publishedAt    DateTime?
+  archivedAt     DateTime?
+  seoTitle       String?           @db.VarChar(240)
+  seoDescription String?           @db.VarChar(500)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  author User? @relation("ContentPostAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([type, status])
+  @@index([authorId])
 }

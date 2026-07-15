@@ -69,8 +69,27 @@ export const reviewActionSchema = z.object({
     .optional(),
 });
 
+export const createReviewReportSchema = z.object({
+  reason: z.enum(["SPAM", "SPOILER", "HARASSMENT", "INAPPROPRIATE", "OTHER"]),
+  details: z.string().trim().max(2000).optional(),
+});
+
+export const reviewReportQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(50).default(10),
+  status: z.enum(["PENDING", "RESOLVED", "DISMISSED"]).optional(),
+});
+
+export const resolveReviewReportSchema = z.object({
+  status: z.enum(["RESOLVED", "DISMISSED"]),
+  resolutionNote: z.string().trim().max(2000).optional(),
+});
+
 // Type Exports
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type UpdateReviewInput = z.infer<typeof updateReviewSchema>;
 export type ReviewQueryInput = z.infer<typeof reviewQuerySchema>;
+export type CreateReviewReportInput = z.infer<typeof createReviewReportSchema>;
+export type ReviewReportQueryInput = z.infer<typeof reviewReportQuerySchema>;
+export type ResolveReviewReportInput = z.infer<typeof resolveReviewReportSchema>;

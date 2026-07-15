@@ -4,6 +4,20 @@ import { env } from "../config/env";
 import prisma from "../config/prisma";
 import { JwtPayload } from "../types";
 
+const LAST_ACTIVE_UPDATE_INTERVAL_MS = 15 * 60 * 1000;
+
+function touchLastActive(userId: string) {
+  const threshold = new Date(Date.now() - LAST_ACTIVE_UPDATE_INTERVAL_MS);
+
+  void prisma.user.updateMany({
+    where: {
+      id: userId,
+      OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: threshold } }],
+    },
+    data: { lastActiveAt: new Date() },
+  }).catch(() => undefined);
+}
+
 // Requires a valid Bearer access token. Re-checks the user in the database on
 // every request so deactivated/soft-deleted accounts are rejected immediately.
 export const authenticate = async (
@@ -56,6 +70,7 @@ export const authenticate = async (
       name: user.name ?? undefined,
       role: user.role,
     };
+    touchLastActive(user.id);
 
     next();
   } catch (error) {
@@ -121,6 +136,7 @@ export const optionalAuthenticate = async (
         name: user.name ?? undefined,
         role: user.role,
       };
+      touchLastActive(user.id);
     }
 
     next();

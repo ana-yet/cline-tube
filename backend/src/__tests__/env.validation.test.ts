@@ -29,6 +29,7 @@ const envSchema = z
     EMAIL_DELIVERY_ENDPOINT: z.string().url().optional(),
     EMAIL_DELIVERY_TOKEN: z.string().min(16).optional(),
     EMAIL_FROM: z.string().min(3).optional(),
+    MEDIA_VIEW_HMAC_SECRET: z.string().min(32).optional(),
     CLOUDINARY_CLOUD_NAME: z.string().min(1),
     CLOUDINARY_API_KEY: z.string().min(1),
     CLOUDINARY_API_SECRET: z.string().min(1),
@@ -43,6 +44,14 @@ const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ["EMAIL_DELIVERY_MODE"],
         message: "Production password recovery requires HTTP email delivery",
+      });
+    }
+
+    if (value.NODE_ENV === "production" && !value.MEDIA_VIEW_HMAC_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MEDIA_VIEW_HMAC_SECRET"],
+        message: "Production view deduplication requires MEDIA_VIEW_HMAC_SECRET",
       });
     }
 
@@ -121,6 +130,7 @@ describe("env schema validation", () => {
       EMAIL_DELIVERY_ENDPOINT: "https://mail.example.com/send",
       EMAIL_DELIVERY_TOKEN: "mail-token-at-least-sixteen-chars",
       EMAIL_FROM: "CineTube <noreply@example.com>",
+      MEDIA_VIEW_HMAC_SECRET: "view-dedup-secret-at-least-thirty-two",
     });
 
     expect(result.success).toBe(true);

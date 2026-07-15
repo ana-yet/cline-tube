@@ -77,6 +77,6 @@ router.get(
 
 router.get("/:slug", optionalAuthenticate, mediaController.getBySlug);
 
-router.post("/:slug/view", mediaController.recordView);
+router.post("/:slug/view", optionalAuthenticate, mediaController.recordView);
 
 export const mediaRouter = router;

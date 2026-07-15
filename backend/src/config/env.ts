@@ -27,6 +27,7 @@ const envSchema = z
   EMAIL_DELIVERY_ENDPOINT: z.string().url().optional(),
   EMAIL_DELIVERY_TOKEN: z.string().min(16).optional(),
   EMAIL_FROM: z.string().min(3).optional(),
+  MEDIA_VIEW_HMAC_SECRET: z.string().min(32).optional(),
   PORT: z.coerce.number().int().positive().default(5000),
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -51,6 +52,14 @@ const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ["EMAIL_DELIVERY_MODE"],
         message: "Production password recovery requires EMAIL_DELIVERY_MODE=http",
+      });
+    }
+
+    if (value.NODE_ENV === "production" && !value.MEDIA_VIEW_HMAC_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MEDIA_VIEW_HMAC_SECRET"],
+        message: "Production view deduplication requires MEDIA_VIEW_HMAC_SECRET",
       });
     }
 

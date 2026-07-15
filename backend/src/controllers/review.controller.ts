@@ -127,7 +127,7 @@ export async function approve(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const review = await reviewService.approveReview(req.params.id);
+    const review = await reviewService.approveReview(req.params.id, req.user!.id);
     sendSuccess(res, { review });
   } catch (error) {
     next(error);
@@ -142,7 +142,7 @@ export async function reject(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const review = await reviewService.rejectReview(req.params.id);
+    const review = await reviewService.rejectReview(req.params.id, req.user!.id);
     sendSuccess(res, { review });
   } catch (error) {
     next(error);
@@ -159,6 +159,59 @@ export async function toggleLike(
   try {
     const result = await reviewService.toggleLike(req.user!.id, req.params.id);
     sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// POST /reviews/:id/report (authenticated)
+
+export async function report(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const report = await reviewService.reportReview(
+      req.user!.id,
+      req.params.id,
+      req.body,
+    );
+    sendSuccess(res, { report }, 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// GET /reviews/reports (admin)
+
+export async function getReports(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const result = await reviewService.getReviewReports(req.query as never);
+    sendSuccess(res, result.items, 200, result.meta);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// POST /reviews/reports/:reportId/resolve (admin)
+
+export async function resolveReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const report = await reviewService.resolveReviewReport(
+      req.user!.id,
+      req.params.reportId,
+      req.body,
+    );
+    sendSuccess(res, { report });
   } catch (error) {
     next(error);
   }

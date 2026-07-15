@@ -25,6 +25,7 @@ export const createMediaSchema = z.object({
     invalid_type_error: "Type must be MOVIE or SERIES",
   }),
   pricingType: z.enum(["FREE", "PREMIUM"]).default("FREE"),
+  publicationStatus: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("PUBLISHED"),
   streamingLink: z
     .string()
     .min(1, "Streaming link is required")
@@ -70,6 +71,7 @@ export const updateMediaSchema = z.object({
     .optional(),
   type: z.enum(["MOVIE", "SERIES"]).optional(),
   pricingType: z.enum(["FREE", "PREMIUM"]).optional(),
+  publicationStatus: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   streamingLink: z.string().url("Must be a valid URL").optional(),
   posterUrl: z.string().url("Must be a valid URL").optional().nullable(),
   posterPublicId: z.string().optional().nullable(),

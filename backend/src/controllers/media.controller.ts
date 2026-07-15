@@ -180,8 +180,11 @@ export async function recordView(
   next: NextFunction,
 ): Promise<void> {
   try {
-    await mediaService.recordView(req.params.slug, req.ip);
-    sendSuccess(res, { recorded: true });
+    const result = await mediaService.recordView(req.params.slug, {
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }
