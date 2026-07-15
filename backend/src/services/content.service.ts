@@ -119,16 +119,19 @@ export async function listAll(query: {
 
 // ── Create Content (Admin) ────────────────────────────────
 
-export async function createContent(input: {
-  type?: string;
-  title: string;
-  slug: string;
-  excerpt?: string;
-  body: string;
-  status?: string;
-  seoTitle?: string;
-  seoDescription?: string;
-}, authorId: string) {
+export async function createContent(
+  input: {
+    type?: string;
+    title: string;
+    slug: string;
+    excerpt?: string;
+    body: string;
+    status?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+  },
+  authorId: string,
+) {
   // Check slug uniqueness
   const existing = await prisma.contentPost.findUnique({
     where: { slug: input.slug },
@@ -136,10 +139,17 @@ export async function createContent(input: {
   });
 
   if (existing) {
-    throw new ApiError(409, "A post with this slug already exists", "SLUG_EXISTS");
+    throw new ApiError(
+      409,
+      "A post with this slug already exists",
+      "SLUG_EXISTS",
+    );
   }
 
-  const status = (input.status?.toUpperCase() || "DRAFT") as "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  const status = (input.status?.toUpperCase() || "DRAFT") as
+    | "DRAFT"
+    | "PUBLISHED"
+    | "ARCHIVED";
 
   const post = await prisma.contentPost.create({
     data: {
@@ -161,15 +171,18 @@ export async function createContent(input: {
 
 // ── Update Content (Admin) ────────────────────────────────
 
-export async function updateContent(id: string, input: {
-  title?: string;
-  slug?: string;
-  excerpt?: string;
-  body?: string;
-  status?: string;
-  seoTitle?: string;
-  seoDescription?: string;
-}) {
+export async function updateContent(
+  id: string,
+  input: {
+    title?: string;
+    slug?: string;
+    excerpt?: string;
+    body?: string;
+    status?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+  },
+) {
   const existing = await prisma.contentPost.findUnique({
     where: { id },
     select: { id: true, status: true },
@@ -186,7 +199,11 @@ export async function updateContent(id: string, input: {
       select: { id: true },
     });
     if (slugTaken) {
-      throw new ApiError(409, "A post with this slug already exists", "SLUG_EXISTS");
+      throw new ApiError(
+        409,
+        "A post with this slug already exists",
+        "SLUG_EXISTS",
+      );
     }
   }
 
@@ -197,7 +214,8 @@ export async function updateContent(id: string, input: {
   if (input.excerpt !== undefined) data.excerpt = input.excerpt?.trim();
   if (input.body !== undefined) data.body = input.body;
   if (input.seoTitle !== undefined) data.seoTitle = input.seoTitle?.trim();
-  if (input.seoDescription !== undefined) data.seoDescription = input.seoDescription?.trim();
+  if (input.seoDescription !== undefined)
+    data.seoDescription = input.seoDescription?.trim();
 
   if (input.status) {
     const newStatus = input.status.toUpperCase();

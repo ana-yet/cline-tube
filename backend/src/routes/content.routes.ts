@@ -22,7 +22,12 @@ import { z } from "zod";
 const createSchema = z.object({
   type: z.enum(["BLOG", "HELP", "LEGAL"]).optional(),
   title: z.string().min(1).max(240).trim(),
-  slug: z.string().min(1).max(240).trim().regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
+  slug: z
+    .string()
+    .min(1)
+    .max(240)
+    .trim()
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
   excerpt: z.string().max(500).optional(),
   body: z.string().min(1).max(50000),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
@@ -32,7 +37,13 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
   title: z.string().min(1).max(240).trim().optional(),
-  slug: z.string().min(1).max(240).trim().regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .min(1)
+    .max(240)
+    .trim()
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   excerpt: z.string().max(500).optional(),
   body: z.string().min(1).max(50000).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
@@ -44,7 +55,8 @@ const router = Router();
 
 // Public
 router.get("/", contentController.listPublished);
-router.get("/admin/all",
+router.get(
+  "/admin/all",
   authenticate,
   authorize({ roles: ["ADMIN"] }),
   contentController.listAll,

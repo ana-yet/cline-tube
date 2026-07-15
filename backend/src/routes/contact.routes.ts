@@ -14,7 +14,9 @@ import { z } from "zod";
  */
 
 const submitSchema = z.object({
-  category: z.enum(["GENERAL", "BILLING", "TECHNICAL", "CONTENT", "ABUSE", "OTHER"]).optional(),
+  category: z
+    .enum(["GENERAL", "BILLING", "TECHNICAL", "CONTENT", "ABUSE", "OTHER"])
+    .optional(),
   name: z.string().min(1).max(160).trim(),
   email: z.string().email().max(320).trim(),
   subject: z.string().min(1).max(240).trim(),

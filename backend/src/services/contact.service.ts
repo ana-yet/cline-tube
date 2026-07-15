@@ -20,7 +20,14 @@ export async function submitContact(input: {
 
   const submission = await prisma.contactSubmission.create({
     data: {
-      category: (input.category?.toUpperCase() as "GENERAL" | "BILLING" | "TECHNICAL" | "CONTENT" | "ABUSE" | "OTHER") || "GENERAL",
+      category:
+        (input.category?.toUpperCase() as
+          | "GENERAL"
+          | "BILLING"
+          | "TECHNICAL"
+          | "CONTENT"
+          | "ABUSE"
+          | "OTHER") || "GENERAL",
       name: input.name.trim(),
       email: input.email.trim(),
       emailNormalized,
@@ -42,7 +49,9 @@ export async function listContacts(query: {
   const { page = 1, limit = 20, status } = query;
   const skip = (page - 1) * limit;
 
-  const where = status ? { status: status as "NEW" | "ASSIGNED" | "RESOLVED" | "DISMISSED" } : {};
+  const where = status
+    ? { status: status as "NEW" | "ASSIGNED" | "RESOLVED" | "DISMISSED" }
+    : {};
 
   const [items, total] = await Promise.all([
     prisma.contactSubmission.findMany({
