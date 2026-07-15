@@ -237,6 +237,7 @@ model RefreshToken {
   absoluteExpiresAt DateTime
   usedAt            DateTime?
   revokedAt         DateTime?
+  revokedReason     String?
   lastUsedAt        DateTime  @default(now())
   createdAt         DateTime  @default(now())
 
@@ -254,9 +255,10 @@ model PasswordResetToken {
   tokenHash String    @unique @map("token")
   userId    String
   expiresAt DateTime
-  used      Boolean   @default(false)
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
+  used          Boolean   @default(false)
+  usedAt        DateTime?
+  invalidatedAt DateTime?
+  createdAt     DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -468,6 +470,7 @@ model Subscription {
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
   providerStatus       String?
+  billingStatus        String?
   cancelAtPeriodEnd    Boolean            @default(false)
   canceledAt           DateTime?
   cancelAt             DateTime?
@@ -476,6 +479,7 @@ model Subscription {
   revokedAt            DateTime?
   revokedReason        String?
   priceLookupKey       String?
+  priceSnapshot        Json?
   lastProviderEventTime DateTime?
   currentPeriodStart   DateTime
   currentPeriodEnd     DateTime

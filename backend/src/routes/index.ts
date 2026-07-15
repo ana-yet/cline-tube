@@ -7,6 +7,10 @@ import { watchlistRouter } from "./watchlist.routes";
 import { profileRouter } from "./profile.routes";
 import { adminRouter } from "./admin.routes";
 import { paymentRouter } from "./payment.routes";
+import { contactRouter } from "./contact.routes";
+import { contentRouter } from "./content.routes";
+import { cleanupRouter } from "./cleanup.routes";
+import { webhookRouter } from "./webhook.routes";
 
 const router = Router();
 
@@ -18,5 +22,11 @@ router.use("/watchlist", watchlistRouter);
 router.use("/profile", profileRouter);
 router.use("/admin", adminRouter);
 router.use("/payments", paymentRouter);
+router.use("/contact", contactRouter);
+router.use("/content", contentRouter);
+router.use("/webhooks", webhookRouter);
+
+// Admin cleanup
+router.use("/", cleanupRouter);
 
 export const apiRouter = router;
