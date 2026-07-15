@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Film, Bell, Search, Menu, X, User, LayoutDashboard, LogOut, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -57,8 +58,8 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 border-b",
         isScrolled
-          ? "bg-zinc-950/80 backdrop-blur-md border-zinc-800/60 shadow-lg shadow-black/20"
-          : "bg-zinc-950 border-zinc-900"
+          ? "bg-background/80 backdrop-blur-md border-border shadow-lg"
+          : "bg-background border-border"
       )}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -114,6 +115,9 @@ export function Navbar() {
               className="bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-full text-xs text-white max-w-[100px] focus:max-w-[150px] transition-all"
             />
           </form>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Notifications area placeholder */}
           <div className="relative cursor-pointer text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-900 rounded-full">
