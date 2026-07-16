@@ -292,10 +292,7 @@ export async function getMediaBySlug(
 
 // Get Stream Link (Authenticated — premium enforced)
 
-export async function getStreamLink(
-  slug: string,
-  userId: string,
-) {
+export async function getStreamLink(slug: string, userId: string) {
   const media = await prisma.media.findFirst({
     where: { slug, ...liveMediaWhere },
     select: {
@@ -334,12 +331,15 @@ const VIEW_DEDUP_RETENTION_DAYS = 7;
 
 function isUniqueViolation(error: unknown) {
   return (
-    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
   );
 }
 
 function utcDay(date: Date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
 }
 
 function addDays(date: Date, days: number) {
@@ -549,6 +549,7 @@ export async function getRelatedMedia(slug: string, limit: number = 8) {
   });
 
   // Sort by number of shared genres (most shared first)
-  return related
-    .sort((a, b) => (b._count?.genres ?? 0) - (a._count?.genres ?? 0));
+  return related.sort(
+    (a, b) => (b._count?.genres ?? 0) - (a._count?.genres ?? 0),
+  );
 }

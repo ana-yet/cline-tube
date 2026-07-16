@@ -83,7 +83,9 @@ export async function update(
 
     if (req.body.backdropRemoved === true && !getUploadedFiles(req).backdrop) {
       if (existing.backdropPublicId) {
-        cloudinaryService.deleteImage(existing.backdropPublicId).catch(() => {});
+        cloudinaryService
+          .deleteImage(existing.backdropPublicId)
+          .catch(() => {});
       }
     }
 

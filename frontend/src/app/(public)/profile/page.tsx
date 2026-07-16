@@ -181,9 +181,10 @@ export default function ProfilePage() {
   const { data: sessions = [] } = useQuery({
     queryKey: ["auth", "sessions"],
     queryFn: async () => {
-      const { data } = await apiClient.get<
-        ApiResponse<{ sessions: SessionData[] }>
-      >("/auth/sessions");
+      const { data } =
+        await apiClient.get<ApiResponse<{ sessions: SessionData[] }>>(
+          "/auth/sessions",
+        );
       return data.data.sessions;
     },
     enabled: isAuthenticated,
@@ -196,10 +197,7 @@ export default function ProfilePage() {
   }, [checkoutSuccess, isAuthenticated, queryClient]);
 
   useEffect(() => {
-    if (
-      checkoutSuccess &&
-      subscription?.entitlement.active
-    ) {
+    if (checkoutSuccess && subscription?.entitlement.active) {
       setSubscriptionActivated(true);
       queryClient.invalidateQueries({ queryKey: ["media"] });
     }
@@ -451,7 +449,8 @@ export default function ProfilePage() {
                   </div>
                 )}
                 {/* Image upload overlay */}
-                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
                   onClick={() => {
                     const input = document.createElement("input");
                     input.type = "file";
@@ -539,7 +538,8 @@ export default function ProfilePage() {
             <AlertDescription className="flex items-center gap-2">
               <Check className="h-4 w-4" />
               <span>
-                Subscription activated! You now have {subscription?.tier} access.
+                Subscription activated! You now have {subscription?.tier}{" "}
+                access.
               </span>
             </AlertDescription>
           </Alert>
@@ -746,7 +746,11 @@ export default function ProfilePage() {
                 {[
                   { href: "/browse", label: "Browse catalog", icon: Film },
                   { href: "/watchlist", label: "My watchlist", icon: Bookmark },
-                  { href: "/pricing", label: "Plans & pricing", icon: Sparkles },
+                  {
+                    href: "/pricing",
+                    label: "Plans & pricing",
+                    icon: Sparkles,
+                  },
                 ].map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}
@@ -1061,7 +1065,9 @@ export default function ProfilePage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-3">
-                      <span className="text-sm text-zinc-500">Member since</span>
+                      <span className="text-sm text-zinc-500">
+                        Member since
+                      </span>
                       <span className="text-sm font-medium text-zinc-200">
                         {joinedDate}
                       </span>
@@ -1222,7 +1228,8 @@ export default function ProfilePage() {
                                     )}
                                   </div>
                                   <p className="text-xs text-zinc-500">
-                                    Last used {formatSessionDate(session.lastUsedAt)}
+                                    Last used{" "}
+                                    {formatSessionDate(session.lastUsedAt)}
                                   </p>
                                 </div>
                               </div>

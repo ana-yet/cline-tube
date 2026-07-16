@@ -9,14 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  Film,
-  Bookmark,
-  Star,
-  Clock,
-  ArrowRight,
-  Plus,
-} from "lucide-react";
+import { Film, Bookmark, Star, Clock, ArrowRight, Plus } from "lucide-react";
 
 /**
  * User Dashboard Page
@@ -52,7 +45,8 @@ export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<DashboardData>>("/dashboard");
+      const { data } =
+        await apiClient.get<ApiResponse<DashboardData>>("/dashboard");
       return data.data;
     },
     enabled: isAuthenticated,
@@ -72,13 +66,22 @@ export default function DashboardPage() {
     return (
       <main className="container mx-auto px-4 py-20 text-center">
         <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-        <p className="text-muted-foreground mb-8">Sign in to view your dashboard</p>
-        <Link href="/login"><Button>Sign In</Button></Link>
+        <p className="text-muted-foreground mb-8">
+          Sign in to view your dashboard
+        </p>
+        <Link href="/login">
+          <Button>Sign In</Button>
+        </Link>
       </main>
     );
   }
 
-  const stats = data ?? { reviewCount: 0, watchlistCount: 0, pendingReviews: 0, recentReviews: [] };
+  const stats = data ?? {
+    reviewCount: 0,
+    watchlistCount: 0,
+    pendingReviews: 0,
+    recentReviews: [],
+  };
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-5xl">

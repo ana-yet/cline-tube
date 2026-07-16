@@ -97,9 +97,5 @@ export function MediaCard({ item, disableAnimation = false }: MediaCardProps) {
     return <div className="group/card">{card}</div>;
   }
 
-  return (
-    <div className="group/card">
-      {card}
-    </div>
-  );
+  return <div className="group/card">{card}</div>;
 }

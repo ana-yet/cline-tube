@@ -16,14 +16,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, Search, SlidersHorizontal, Eye, Film, Grid, DollarSign, Calendar } from "lucide-react";
+import {
+  Star,
+  Search,
+  SlidersHorizontal,
+  Eye,
+  Film,
+  Grid,
+  DollarSign,
+  Calendar,
+} from "lucide-react";
 import { MediaCard } from "@/components/media-card";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Genre catalog for filtering
 const GENRES = [
-  "Action", "Comedy", "Drama", "Sci-Fi", "Thriller", 
-  "Horror", "Romance", "Adventure", "Fantasy", "Mystery"
+  "Action",
+  "Comedy",
+  "Drama",
+  "Sci-Fi",
+  "Thriller",
+  "Horror",
+  "Romance",
+  "Adventure",
+  "Fantasy",
+  "Mystery",
 ];
 
 function BrowseContent() {
@@ -33,7 +50,9 @@ function BrowseContent() {
   // Load initial states from URL params for search, genre, etc.
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [type, setType] = useState(searchParams.get("type") || "all");
-  const [pricingType, setPricingType] = useState(searchParams.get("pricingType") || "all");
+  const [pricingType, setPricingType] = useState(
+    searchParams.get("pricingType") || "all",
+  );
   const [genre, setGenre] = useState(searchParams.get("genre") || "");
   const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "latest");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
@@ -50,7 +69,9 @@ function BrowseContent() {
   }, [searchParams]);
 
   // Update URL search parameters helper
-  const updateUrlParams = (newParams: Record<string, string | number | null>) => {
+  const updateUrlParams = (
+    newParams: Record<string, string | number | null>,
+  ) => {
     const nextParams = new URLSearchParams(searchParams.toString());
     Object.entries(newParams).forEach(([key, val]) => {
       if (val === null || val === "all" || val === "") {
@@ -67,7 +88,11 @@ function BrowseContent() {
   };
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["media", "list", { search, type, pricingType, genre, sortBy, page }],
+    queryKey: [
+      "media",
+      "list",
+      { search, type, pricingType, genre, sortBy, page },
+    ],
     queryFn: async () => {
       const params: Record<string, string | number> = {
         page,
@@ -111,10 +136,11 @@ function BrowseContent() {
             <span>Discover Cinema</span>
           </h1>
           <p className="text-zinc-500 text-sm mt-1">
-            Browse, filter, and discover your next favorite movie or series from our catalog.
+            Browse, filter, and discover your next favorite movie or series from
+            our catalog.
           </p>
         </div>
-        
+
         {/* Mobile Filters Toggle & Sorting */}
         <div className="flex items-center gap-3 self-start md:self-end">
           <Button
@@ -167,7 +193,9 @@ function BrowseContent() {
 
             {/* Title Search */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Search</label>
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                Search
+              </label>
               <div className="relative">
                 <Input
                   placeholder="Title, director..."
@@ -284,7 +312,9 @@ function BrowseContent() {
 
               {/* Title Search Mobile */}
               <div className="space-y-1">
-                <label className="text-xs text-zinc-500 uppercase tracking-wider">Search</label>
+                <label className="text-xs text-zinc-500 uppercase tracking-wider">
+                  Search
+                </label>
                 <Input
                   placeholder="Search by title, director..."
                   value={search}
@@ -298,7 +328,9 @@ function BrowseContent() {
 
               {/* Media Type Mobile */}
               <div className="space-y-1">
-                <label className="text-xs text-zinc-500 uppercase tracking-wider">Type</label>
+                <label className="text-xs text-zinc-500 uppercase tracking-wider">
+                  Type
+                </label>
                 <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-lg">
                   {["all", "MOVIE", "SERIES"].map((t) => (
                     <button
@@ -308,10 +340,16 @@ function BrowseContent() {
                         updateUrlParams({ type: t });
                       }}
                       className={`py-1 rounded text-xs transition-colors ${
-                        type === t ? "bg-red-600 text-white font-medium" : "text-zinc-400"
+                        type === t
+                          ? "bg-red-600 text-white font-medium"
+                          : "text-zinc-400"
                       }`}
                     >
-                      {t === "all" ? "All" : t === "MOVIE" ? "Movies" : "Series"}
+                      {t === "all"
+                        ? "All"
+                        : t === "MOVIE"
+                          ? "Movies"
+                          : "Series"}
                     </button>
                   ))}
                 </div>
@@ -319,7 +357,9 @@ function BrowseContent() {
 
               {/* Pricing Type Mobile */}
               <div className="space-y-1">
-                <label className="text-xs text-zinc-500 uppercase tracking-wider">Pricing</label>
+                <label className="text-xs text-zinc-500 uppercase tracking-wider">
+                  Pricing
+                </label>
                 <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-lg">
                   {["all", "FREE", "PREMIUM"].map((p) => (
                     <button
@@ -329,7 +369,9 @@ function BrowseContent() {
                         updateUrlParams({ pricingType: p });
                       }}
                       className={`py-1 rounded text-xs transition-colors ${
-                        pricingType === p ? "bg-red-600 text-white font-medium" : "text-zinc-400"
+                        pricingType === p
+                          ? "bg-red-600 text-white font-medium"
+                          : "text-zinc-400"
                       }`}
                     >
                       {p === "all" ? "All" : p === "FREE" ? "Free" : "Premium"}
@@ -340,7 +382,9 @@ function BrowseContent() {
 
               {/* Genres list Mobile */}
               <div className="space-y-2">
-                <label className="text-xs text-zinc-500 uppercase tracking-wider">Genres</label>
+                <label className="text-xs text-zinc-500 uppercase tracking-wider">
+                  Genres
+                </label>
                 <div className="flex flex-wrap gap-1">
                   {GENRES.map((g) => {
                     const isSelected = genre === g;
@@ -373,11 +417,17 @@ function BrowseContent() {
           {error ? (
             <div className="text-center py-24 border border-zinc-900 border-dashed rounded-3xl bg-zinc-900/15">
               <Film className="h-10 w-10 text-zinc-600 mx-auto mb-4 stroke-1" />
-              <p className="text-lg font-semibold text-zinc-400">Failed to load media</p>
+              <p className="text-lg font-semibold text-zinc-400">
+                Failed to load media
+              </p>
               <p className="text-zinc-600 text-sm mt-1 max-w-xs mx-auto">
                 Something went wrong. Please try again.
               </p>
-              <Button onClick={() => window.location.reload()} variant="outline" className="mt-6 border-zinc-850 bg-zinc-900 hover:bg-zinc-800">
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="mt-6 border-zinc-850 bg-zinc-900 hover:bg-zinc-800"
+              >
                 Retry
               </Button>
             </div>
@@ -393,11 +443,18 @@ function BrowseContent() {
           ) : media.length === 0 ? (
             <div className="text-center py-24 border border-zinc-900 border-dashed rounded-3xl bg-zinc-900/15">
               <Film className="h-10 w-10 text-zinc-600 mx-auto mb-4 stroke-1" />
-              <p className="text-lg font-semibold text-zinc-400">No cinematic works found</p>
-              <p className="text-zinc-600 text-sm mt-1 max-w-xs mx-auto">
-                Try clearing your active filters or checking for typos in search queries.
+              <p className="text-lg font-semibold text-zinc-400">
+                No cinematic works found
               </p>
-              <Button onClick={handleResetFilters} variant="outline" className="mt-6 border-zinc-850 bg-zinc-900 hover:bg-zinc-800">
+              <p className="text-zinc-600 text-sm mt-1 max-w-xs mx-auto">
+                Try clearing your active filters or checking for typos in search
+                queries.
+              </p>
+              <Button
+                onClick={handleResetFilters}
+                variant="outline"
+                className="mt-6 border-zinc-850 bg-zinc-900 hover:bg-zinc-800"
+              >
                 Clear Filters
               </Button>
             </div>
@@ -449,11 +506,13 @@ function BrowseContent() {
 
 export default function BrowsePage() {
   return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-8 max-w-7xl text-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent mx-auto" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-8 max-w-7xl text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent mx-auto" />
+        </div>
+      }
+    >
       <BrowseContent />
     </Suspense>
   );

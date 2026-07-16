@@ -488,7 +488,10 @@ export default function MediaDetailPage({
 
               {isAuthenticated && !myReview && (
                 <div className="rounded-2xl border border-zinc-900 bg-zinc-900/30 p-6">
-                  <ReviewForm mediaId={media.id} onSuccess={invalidateMyReview} />
+                  <ReviewForm
+                    mediaId={media.id}
+                    onSuccess={invalidateMyReview}
+                  />
                 </div>
               )}
 
@@ -568,7 +571,9 @@ export default function MediaDetailPage({
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-zinc-500">Views</dt>
-                  <dd className="text-zinc-200 font-medium">{media.viewCount}</dd>
+                  <dd className="text-zinc-200 font-medium">
+                    {media.viewCount}
+                  </dd>
                 </div>
               </dl>
             </div>

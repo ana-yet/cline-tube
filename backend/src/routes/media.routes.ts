@@ -71,11 +71,7 @@ router.get("/genres", mediaController.genres);
 
 router.get("/:slug/related", mediaController.getRelated);
 
-router.get(
-  "/:slug/stream",
-  authenticate,
-  mediaController.getStream,
-);
+router.get("/:slug/stream", authenticate, mediaController.getStream);
 
 router.get("/:slug", optionalAuthenticate, mediaController.getBySlug);
 
