@@ -43,7 +43,11 @@ function redact(obj: unknown): unknown {
   return redacted;
 }
 
-function formatMessage(level: string, message: string, meta?: Record<string, unknown>) {
+function formatMessage(
+  level: string,
+  message: string,
+  meta?: Record<string, unknown>,
+) {
   const isProduction = env.NODE_ENV === "production";
 
   if (isProduction) {

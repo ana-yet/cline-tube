@@ -36,7 +36,8 @@ if (process.env.NODE_ENV !== "test") {
           url: tokens.url(req, res),
           status: Number(tokens.status(req, res)),
           responseTime: Number(tokens["response-time"](req, res)),
-          requestId: (req as unknown as Record<string, unknown>).requestId as string,
+          requestId: (req as unknown as Record<string, unknown>)
+            .requestId as string,
           ip: tokens["remote-addr"](req, res),
         });
       }),
