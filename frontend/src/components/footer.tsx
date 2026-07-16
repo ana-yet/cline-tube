@@ -119,6 +119,33 @@ export function Footer() {
             </ul>
           </div>
 
+          {/* Company */}
+          <div>
+            <h4 className="font-semibold text-zinc-200 mb-4">Company</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/about" className="hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="hover:text-white transition-colors">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors">
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="hover:text-white transition-colors">
+                  Help Center
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Genres */}
           <div>
             <h4 className="font-semibold text-zinc-200 mb-4">Popular Genres</h4>
@@ -188,15 +215,15 @@ export function Footer() {
             &copy; {new Date().getFullYear()} CineTube. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-zinc-400 transition-colors">
+            <Link href="/privacy" className="hover:text-zinc-400 transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-zinc-400 transition-colors">
+            </Link>
+            <Link href="/terms" className="hover:text-zinc-400 transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="hover:text-zinc-400 transition-colors">
-              Cookie Policy
-            </a>
+            </Link>
+            <Link href="/help" className="hover:text-zinc-400 transition-colors">
+              Help
+            </Link>
           </div>
         </div>
       </div>
