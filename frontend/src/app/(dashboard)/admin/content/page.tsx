@@ -82,7 +82,9 @@ export default function AdminContentPage() {
       const apiError = err as {
         response?: { data?: { error?: { message?: string } } };
       };
-      setError(apiError.response?.data?.error?.message || "Failed to create post");
+      setError(
+        apiError.response?.data?.error?.message || "Failed to create post",
+      );
     },
   });
 
@@ -99,7 +101,9 @@ export default function AdminContentPage() {
       const apiError = err as {
         response?: { data?: { error?: { message?: string } } };
       };
-      setError(apiError.response?.data?.error?.message || "Failed to update post");
+      setError(
+        apiError.response?.data?.error?.message || "Failed to update post",
+      );
     },
   });
 
@@ -113,7 +117,14 @@ export default function AdminContentPage() {
   });
 
   const resetForm = () => {
-    setForm({ type: "BLOG", title: "", slug: "", excerpt: "", body: "", status: "DRAFT" });
+    setForm({
+      type: "BLOG",
+      title: "",
+      slug: "",
+      excerpt: "",
+      body: "",
+      status: "DRAFT",
+    });
     setError(null);
   };
 
@@ -170,7 +181,9 @@ export default function AdminContentPage() {
                     if (v) setForm((f) => ({ ...f, type: v }));
                   }}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="BLOG">Blog</SelectItem>
                     <SelectItem value="HELP">Help</SelectItem>
@@ -186,7 +199,9 @@ export default function AdminContentPage() {
                     if (v) setForm((f) => ({ ...f, status: v }));
                   }}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="DRAFT">Draft</SelectItem>
                     <SelectItem value="PUBLISHED">Published</SelectItem>
@@ -200,7 +215,9 @@ export default function AdminContentPage() {
               <Label>Title</Label>
               <Input
                 value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, title: e.target.value }))
+                }
               />
             </div>
 
@@ -208,7 +225,9 @@ export default function AdminContentPage() {
               <Label>Slug</Label>
               <Input
                 value={form.slug}
-                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, slug: e.target.value }))
+                }
                 placeholder="my-post-slug"
               />
             </div>
@@ -217,7 +236,9 @@ export default function AdminContentPage() {
               <Label>Excerpt</Label>
               <Input
                 value={form.excerpt}
-                onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, excerpt: e.target.value }))
+                }
               />
             </div>
 
@@ -226,7 +247,9 @@ export default function AdminContentPage() {
               <Textarea
                 rows={10}
                 value={form.body}
-                onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, body: e.target.value }))
+                }
               />
             </div>
 

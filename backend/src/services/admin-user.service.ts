@@ -71,7 +71,11 @@ export async function deactivateUser(userId: string) {
   }
 
   if (user.isDeleted) {
-    throw new ApiError(400, "User is already deactivated", "ALREADY_DEACTIVATED");
+    throw new ApiError(
+      400,
+      "User is already deactivated",
+      "ALREADY_DEACTIVATED",
+    );
   }
 
   // Prevent deactivating the last admin

@@ -6,7 +6,21 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Film, LayoutDashboard, Database, ShieldAlert, ArrowLeft, LogOut, Menu, X, ShieldCheck, Users, CreditCard, MessageSquare, FileText } from "lucide-react";
+import {
+  Film,
+  LayoutDashboard,
+  Database,
+  ShieldAlert,
+  ArrowLeft,
+  LogOut,
+  Menu,
+  X,
+  ShieldCheck,
+  Users,
+  CreditCard,
+  MessageSquare,
+  FileText,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +68,10 @@ export default function AdminLayout({
         <div className="flex items-center gap-2 px-3">
           <Film className="h-6 w-6 text-red-500 fill-red-500" />
           <span className="text-xl font-extrabold text-white tracking-tight flex items-center gap-1.5">
-            CineTube <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] uppercase hover:bg-red-500/10">Admin</Badge>
+            CineTube{" "}
+            <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] uppercase hover:bg-red-500/10">
+              Admin
+            </Badge>
           </span>
         </div>
 
@@ -64,7 +81,9 @@ export default function AdminLayout({
             {user?.name ? user.name.slice(0, 2).toUpperCase() : "AD"}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-zinc-200 truncate">{user?.name || "Administrator"}</p>
+            <p className="text-xs font-bold text-zinc-200 truncate">
+              {user?.name || "Administrator"}
+            </p>
             <p className="text-[10px] text-zinc-500 font-mono flex items-center gap-0.5 mt-0.5">
               <ShieldCheck className="h-3 w-3 text-red-500" />
               <span>SUPERUSER</span>
@@ -75,7 +94,9 @@ export default function AdminLayout({
         {/* Links */}
         <nav className="space-y-1.5 pt-4">
           {sidebarLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href));
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/admin" && pathname.startsWith(link.href));
             const LinkIcon = link.icon;
             return (
               <Link
@@ -85,13 +106,17 @@ export default function AdminLayout({
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all group/link",
                   isActive
                     ? "bg-red-500/10 text-red-400 font-bold border-l-2 border-red-500 rounded-l-none"
-                    : "hover:bg-zinc-900/40 hover:text-white"
+                    : "hover:bg-zinc-900/40 hover:text-white",
                 )}
               >
-                <LinkIcon className={cn(
-                  "h-4 w-4 shrink-0 transition-colors",
-                  isActive ? "text-red-400" : "text-zinc-500 group-hover/link:text-white"
-                )} />
+                <LinkIcon
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    isActive
+                      ? "text-red-400"
+                      : "text-zinc-500 group-hover/link:text-white",
+                  )}
+                />
                 <span>{link.label}</span>
               </Link>
             );
@@ -102,7 +127,10 @@ export default function AdminLayout({
       {/* Bottom links */}
       <div className="p-4 border-t border-zinc-900 space-y-2">
         <Link href="/">
-          <Button variant="ghost" className="w-full justify-start text-xs font-semibold gap-2.5 text-zinc-400 hover:text-white hover:bg-zinc-900/50">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-xs font-semibold gap-2.5 text-zinc-400 hover:text-white hover:bg-zinc-900/50"
+          >
             <ArrowLeft className="h-4 w-4 text-zinc-500" />
             <span>Return to Site</span>
           </Button>
@@ -163,11 +191,18 @@ export default function AdminLayout({
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest font-mono">
-              {pathname === "/admin" ? "Overview" : pathname.includes("/admin/media") ? "Media Catalog" : "Review Moderation"}
+              {pathname === "/admin"
+                ? "Overview"
+                : pathname.includes("/admin/media")
+                  ? "Media Catalog"
+                  : "Review Moderation"}
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 font-semibold underline underline-offset-4">
+            <Link
+              href="/"
+              className="text-xs text-zinc-500 hover:text-zinc-300 font-semibold underline underline-offset-4"
+            >
               View Public CineTube
             </Link>
           </div>

@@ -123,7 +123,9 @@ export default function AdminContactsPage() {
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No contact submissions found.</p>
+            <p className="text-muted-foreground">
+              No contact submissions found.
+            </p>
           </CardContent>
         </Card>
       ) : (

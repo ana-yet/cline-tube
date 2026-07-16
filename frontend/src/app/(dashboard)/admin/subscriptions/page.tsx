@@ -33,9 +33,10 @@ export default function AdminSubscriptionsPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin", "subscriptions"],
     queryFn: async () => {
-      const { data } = await apiClient.get<
-        ApiResponse<{ kpis: RevenueStats }>
-      >("/admin/dashboard");
+      const { data } =
+        await apiClient.get<ApiResponse<{ kpis: RevenueStats }>>(
+          "/admin/dashboard",
+        );
       return data.data.kpis;
     },
   });

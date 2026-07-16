@@ -113,7 +113,9 @@ export default function AdminUsersPage() {
                   <td className="py-3 pr-4">
                     <div>
                       <p className="font-medium">{user.name || "Anonymous"}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
                     </div>
                   </td>
                   <td className="py-3 pr-4">
