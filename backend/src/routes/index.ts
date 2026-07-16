@@ -11,6 +11,7 @@ import { contactRouter } from "./contact.routes";
 import { contentRouter } from "./content.routes";
 import { cleanupRouter } from "./cleanup.routes";
 import { webhookRouter } from "./webhook.routes";
+import { dashboardRouter } from "./dashboard.routes";
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use("/media", mediaRouter);
 router.use("/reviews", reviewRouter);
 router.use("/upload", uploadRouter);
 router.use("/watchlist", watchlistRouter);
+router.use("/dashboard", dashboardRouter);
 router.use("/profile", profileRouter);
 router.use("/admin", adminRouter);
 router.use("/payments", paymentRouter);
