@@ -203,3 +203,18 @@ export async function getById(
     next(error);
   }
 }
+
+// GET /media/:slug/related (public)
+export async function getRelated(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : 8;
+    const items = await mediaService.getRelatedMedia(req.params.slug, limit);
+    sendSuccess(res, { items });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -69,6 +69,8 @@ router.get("/", validate(mediaQuerySchema, "query"), mediaController.list);
 
 router.get("/genres", mediaController.genres);
 
+router.get("/:slug/related", mediaController.getRelated);
+
 router.get(
   "/:slug/stream",
   authenticate,

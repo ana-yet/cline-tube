@@ -8,7 +8,6 @@ import apiClient from "@/lib/api";
 import type { ApiResponse, MediaSummary, PaginatedResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Star, Search, SlidersHorizontal, Eye, Film, Grid, DollarSign, Calendar } from "lucide-react";
+import { MediaCard } from "@/components/media-card";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Genre catalog for filtering
@@ -66,7 +66,7 @@ function BrowseContent() {
     router.push(`/browse?${nextParams.toString()}`);
   };
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["media", "list", { search, type, pricingType, genre, sortBy, page }],
     queryFn: async () => {
       const params: Record<string, string | number> = {
@@ -317,6 +317,27 @@ function BrowseContent() {
                 </div>
               </div>
 
+              {/* Pricing Type Mobile */}
+              <div className="space-y-1">
+                <label className="text-xs text-zinc-500 uppercase tracking-wider">Pricing</label>
+                <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-lg">
+                  {["all", "FREE", "PREMIUM"].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => {
+                        setPricingType(p);
+                        updateUrlParams({ pricingType: p });
+                      }}
+                      className={`py-1 rounded text-xs transition-colors ${
+                        pricingType === p ? "bg-red-600 text-white font-medium" : "text-zinc-400"
+                      }`}
+                    >
+                      {p === "all" ? "All" : p === "FREE" ? "Free" : "Premium"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Genres list Mobile */}
               <div className="space-y-2">
                 <label className="text-xs text-zinc-500 uppercase tracking-wider">Genres</label>
@@ -349,7 +370,18 @@ function BrowseContent() {
 
         {/* Media Grid & Main Content */}
         <div className="lg:col-span-3 space-y-8">
-          {isLoading ? (
+          {error ? (
+            <div className="text-center py-24 border border-zinc-900 border-dashed rounded-3xl bg-zinc-900/15">
+              <Film className="h-10 w-10 text-zinc-600 mx-auto mb-4 stroke-1" />
+              <p className="text-lg font-semibold text-zinc-400">Failed to load media</p>
+              <p className="text-zinc-600 text-sm mt-1 max-w-xs mx-auto">
+                Something went wrong. Please try again.
+              </p>
+              <Button onClick={() => window.location.reload()} variant="outline" className="mt-6 border-zinc-850 bg-zinc-900 hover:bg-zinc-800">
+                Retry
+              </Button>
+            </div>
+          ) : isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
@@ -373,72 +405,7 @@ function BrowseContent() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                 {media.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    whileHover={{ y: -5, scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="group/card"
-                  >
-                    <Link href={`/browse/${item.slug}`}>
-                      <Card className="overflow-hidden bg-zinc-900/40 border-zinc-900 rounded-2xl hover:border-red-500/50 hover:shadow-lg hover:shadow-red-950/10 transition-all duration-300 h-full flex flex-col justify-between">
-                        <div className="aspect-[2/3] bg-zinc-950 flex items-center justify-center relative overflow-hidden">
-                          {item.posterUrl ? (
-                            <img
-                              src={item.posterUrl}
-                              alt={item.title}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <span className="text-4xl text-zinc-700">🎬</span>
-                          )}
-
-                          {/* Glossy hover gradient overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                            <Button size="sm" className="bg-red-650 hover:bg-red-700 rounded-full h-10 w-10 p-0 shadow-lg shadow-red-950/40 translate-y-4 group-hover/card:translate-y-0 transition-transform duration-300">
-                              <Eye className="h-4.5 w-4.5 text-white fill-white/10" />
-                            </Button>
-                          </div>
-
-                          {/* Star Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-zinc-950/80 backdrop-blur-md border border-zinc-800 px-2 py-0.5 rounded-full text-xs font-semibold text-amber-400 flex items-center gap-1 shadow-sm">
-                            <Star className="h-3.5 w-3.5 fill-amber-400" />
-                            <span>{item.averageRating || "N/A"}</span>
-                          </div>
-
-                          {/* Year Badge */}
-                          <div className="absolute bottom-3 left-3 bg-zinc-950/80 backdrop-blur-md border border-zinc-800 px-2 py-0.5 rounded-full text-xs font-semibold text-zinc-300 flex items-center gap-1 shadow-sm">
-                            <Calendar className="h-3 w-3 text-zinc-400" />
-                            <span>{item.releaseYear}</span>
-                          </div>
-                        </div>
-
-                        <CardContent className="p-4 space-y-2 border-t border-zinc-900/60 bg-zinc-900/20">
-                          <div className="flex items-center justify-between gap-1">
-                            <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] hover:bg-red-500/10">
-                              {item.type}
-                            </Badge>
-                            {item.pricingType === "PREMIUM" && (
-                              <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] hover:bg-amber-500/10">
-                                Premium
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <h3 className="font-bold text-sm text-zinc-200 line-clamp-1 group-hover/card:text-red-500 transition-colors">
-                            {item.title}
-                          </h3>
-                          
-                          <div className="flex items-center justify-between text-xs text-zinc-500">
-                            <span>{item.reviewsCount} reviews</span>
-                            <span className="truncate max-w-[100px] text-right font-light">
-                              {item.genres.map((g) => g.genre.name).join(", ")}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </motion.div>
+                  <MediaCard key={item.id} item={item} />
                 ))}
               </div>
 

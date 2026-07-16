@@ -574,7 +574,84 @@ export default function MediaDetailPage({
             </div>
           </aside>
         </div>
+
+        {/* Related Media */}
+        <RelatedMedia slug={slug} />
       </div>
     </main>
+  );
+}
+
+// ── Related Media Section ─────────────────────────────────
+
+function RelatedMedia({ slug }: { slug: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["media", "related", slug],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ items: MediaSummary[] }>
+      >(`/media/${slug}/related`);
+      return data.data.items;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <section className="mt-16">
+        <h2 className="text-xl font-bold tracking-tight text-white mb-6">
+          You May Also Like
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-[2/3] rounded-xl bg-zinc-900 animate-pulse"
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <section className="mt-16">
+      <h2 className="text-xl font-bold tracking-tight text-white mb-6">
+        You May Also Like
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {data.map((item) => (
+          <Link key={item.id} href={`/browse/${item.slug}`} className="group">
+            <div className="aspect-[2/3] rounded-xl overflow-hidden bg-zinc-900 relative">
+              {item.posterUrl ? (
+                <img
+                  src={item.posterUrl}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl">
+                  🎬
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-white text-xs font-medium line-clamp-2">
+                  {item.title}
+                </p>
+                <p className="text-amber-400 text-xs">
+                  ⭐ {item.averageRating || "N/A"}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-zinc-400 line-clamp-1">
+              {item.title}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

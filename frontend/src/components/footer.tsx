@@ -24,7 +24,10 @@ export function Footer() {
               television enthusiasts around the globe.
             </p>
             <div className="flex items-center gap-4 text-zinc-500 pt-2">
-              <Link href="/contact" className="hover:text-white transition-colors text-sm">
+              <Link
+                href="/contact"
+                className="hover:text-white transition-colors text-sm"
+              >
                 Contact Us
               </Link>
             </div>

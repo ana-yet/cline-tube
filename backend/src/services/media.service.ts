@@ -504,3 +504,51 @@ export async function getMediaById(id: string) {
 
   return media;
 }
+
+// ── Get Related Media (by shared genres) ──────────────────
+
+export async function getRelatedMedia(slug: string, limit: number = 8) {
+  const media = await prisma.media.findUnique({
+    where: { slug, ...liveMediaWhere },
+    select: { id: true },
+  });
+
+  if (!media) {
+    throw new ApiError(404, "Media not found", "MEDIA_NOT_FOUND");
+  }
+
+  // Get genre IDs for this media
+  const mediaGenres = await prisma.mediaGenre.findMany({
+    where: { mediaId: media.id },
+    select: { genreId: true },
+  });
+
+  const genreIds = mediaGenres.map((g) => g.genreId);
+
+  if (genreIds.length === 0) {
+    return [];
+  }
+
+  // Find media sharing at least one genre, exclude current, prefer most shared
+  const related = await prisma.media.findMany({
+    where: {
+      ...liveMediaWhere,
+      id: { not: media.id },
+      genres: { some: { genreId: { in: genreIds } } },
+    },
+    select: {
+      ...mediaListSelect,
+      _count: {
+        select: {
+          genres: { where: { genreId: { in: genreIds } } },
+        },
+      },
+    },
+    orderBy: [{ averageRating: "desc" }, { viewCount: "desc" }],
+    take: limit,
+  });
+
+  // Sort by number of shared genres (most shared first)
+  return related
+    .sort((a, b) => (b._count?.genres ?? 0) - (a._count?.genres ?? 0));
+}
