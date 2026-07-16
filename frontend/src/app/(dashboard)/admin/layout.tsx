@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
-import { Film, LayoutDashboard, Database, ShieldAlert, ArrowLeft, LogOut, Menu, X, ShieldCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Film, LayoutDashboard, Database, ShieldAlert, ArrowLeft, LogOut, Menu, X, ShieldCheck, Users, CreditCard, MessageSquare, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -38,8 +39,12 @@ export default function AdminLayout({
 
   const sidebarLinks = [
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
-    { label: "Manage Media", href: "/admin/media", icon: Database },
-    { label: "Moderate Reviews", href: "/admin/reviews", icon: ShieldAlert },
+    { label: "Media", href: "/admin/media", icon: Database },
+    { label: "Reviews", href: "/admin/reviews", icon: ShieldAlert },
+    { label: "Users", href: "/admin/users", icon: Users },
+    { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
+    { label: "Contacts", href: "/admin/contacts", icon: MessageSquare },
+    { label: "Content", href: "/admin/content", icon: FileText },
   ];
 
   const SidebarContent = () => (
@@ -174,14 +179,5 @@ export default function AdminLayout({
         </main>
       </div>
     </div>
-  );
-}
-
-// Simple inline Badge wrapper to prevent dependencies issues
-function Badge({ className, children }: { className?: string; children: React.ReactNode }) {
-  return (
-    <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)}>
-      {children}
-    </span>
   );
 }
