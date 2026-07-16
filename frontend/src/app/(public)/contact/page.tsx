@@ -31,7 +31,10 @@ const contactSchema = z.object({
   email: z.string().email("Valid email required").max(320),
   category: z.string().optional(),
   subject: z.string().min(1, "Subject is required").max(240),
-  message: z.string().min(10, "Message must be at least 10 characters").max(5000),
+  message: z
+    .string()
+    .min(10, "Message must be at least 10 characters")
+    .max(5000),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;

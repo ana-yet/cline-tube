@@ -17,8 +17,8 @@ export default function AboutPage() {
           About CineTube
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          A community-driven platform where movie and series enthusiasts discover,
-          rate, and share their passion for great storytelling.
+          A community-driven platform where movie and series enthusiasts
+          discover, rate, and share their passion for great storytelling.
         </p>
       </section>
 
@@ -26,10 +26,10 @@ export default function AboutPage() {
       <section className="mb-16">
         <h2 className="text-2xl font-bold mb-6">Our Mission</h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          CineTube was built to create a space where film and television fans can
-          discover new content through authentic community reviews, build personal
-          watchlists, and engage with a community that shares their passion for
-          great storytelling.
+          CineTube was built to create a space where film and television fans
+          can discover new content through authentic community reviews, build
+          personal watchlists, and engage with a community that shares their
+          passion for great storytelling.
         </p>
         <p className="text-muted-foreground leading-relaxed">
           Every rating on CineTube comes from a real viewer. We believe in
@@ -74,10 +74,7 @@ export default function AboutPage() {
               desc: "Unlock exclusive premium movies and series with a subscription plan.",
             },
           ].map((feature) => (
-            <div
-              key={feature.title}
-              className="p-6 rounded-xl border bg-card"
-            >
+            <div key={feature.title} className="p-6 rounded-xl border bg-card">
               <feature.icon className="h-8 w-8 text-primary mb-3" />
               <h3 className="font-semibold mb-2">{feature.title}</h3>
               <p className="text-sm text-muted-foreground">{feature.desc}</p>

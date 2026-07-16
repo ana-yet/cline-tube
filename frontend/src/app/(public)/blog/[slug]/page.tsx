@@ -29,7 +29,11 @@ export default function BlogDetailPage({
 }) {
   const { slug } = use(params);
 
-  const { data: post, isLoading, error } = useQuery({
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["content", slug],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<{ post: ContentPost }>>(

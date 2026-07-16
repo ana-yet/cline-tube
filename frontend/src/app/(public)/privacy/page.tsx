@@ -1,6 +1,7 @@
 export const metadata = {
   title: "Privacy Policy",
-  description: "CineTube Privacy Policy — how we collect, use, and protect your data.",
+  description:
+    "CineTube Privacy Policy — how we collect, use, and protect your data.",
 };
 
 export default function PrivacyPage() {
@@ -17,10 +18,10 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-2xl font-bold mb-3">1. Introduction</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Welcome to CineTube. This Privacy Policy explains how we collect, use,
-            disclose, and safeguard your information when you use our platform. By
-            using CineTube, you agree to the collection and use of information in
-            accordance with this policy.
+            Welcome to CineTube. This Privacy Policy explains how we collect,
+            use, disclose, and safeguard your information when you use our
+            platform. By using CineTube, you agree to the collection and use of
+            information in accordance with this policy.
           </p>
         </section>
 
@@ -30,15 +31,29 @@ export default function PrivacyPage() {
             We collect information you provide directly, including:
           </p>
           <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-            <li><strong>Account Information:</strong> Name, email address, and password when you create an account.</li>
-            <li><strong>Profile Information:</strong> Bio, favorite genres, website, and social media links you choose to share.</li>
-            <li><strong>Content:</strong> Reviews, ratings, comments, and watchlist entries you create.</li>
-            <li><strong>Contact Submissions:</strong> Messages you send through our contact form.</li>
+            <li>
+              <strong>Account Information:</strong> Name, email address, and
+              password when you create an account.
+            </li>
+            <li>
+              <strong>Profile Information:</strong> Bio, favorite genres,
+              website, and social media links you choose to share.
+            </li>
+            <li>
+              <strong>Content:</strong> Reviews, ratings, comments, and
+              watchlist entries you create.
+            </li>
+            <li>
+              <strong>Contact Submissions:</strong> Messages you send through
+              our contact form.
+            </li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold mb-3">3. How We Use Your Information</h2>
+          <h2 className="text-2xl font-bold mb-3">
+            3. How We Use Your Information
+          </h2>
           <p className="text-muted-foreground leading-relaxed mb-3">
             We use your information to:
           </p>
@@ -57,17 +72,17 @@ export default function PrivacyPage() {
             We implement industry-standard security measures including encrypted
             password storage (bcrypt), secure JWT-based authentication, HttpOnly
             cookies for refresh tokens, and HTTPS encryption. While no method of
-            transmission over the Internet is 100% secure, we strive to protect your
-            personal information.
+            transmission over the Internet is 100% secure, we strive to protect
+            your personal information.
           </p>
         </section>
 
         <section>
           <h2 className="text-2xl font-bold mb-3">5. Third-Party Services</h2>
           <p className="text-muted-foreground leading-relaxed">
-            We use Stripe for payment processing and Cloudinary for image hosting.
-            These services have their own privacy policies. We do not store your
-            full credit card information on our servers.
+            We use Stripe for payment processing and Cloudinary for image
+            hosting. These services have their own privacy policies. We do not
+            store your full credit card information on our servers.
           </p>
         </section>
 
@@ -80,7 +95,10 @@ export default function PrivacyPage() {
             <li>Access, update, or delete your account information.</li>
             <li>Request a copy of your personal data.</li>
             <li>Opt out of non-essential communications.</li>
-            <li>Request account deletion (subject to legal retention requirements).</li>
+            <li>
+              Request account deletion (subject to legal retention
+              requirements).
+            </li>
           </ul>
         </section>
 
@@ -88,7 +106,11 @@ export default function PrivacyPage() {
           <h2 className="text-2xl font-bold mb-3">7. Contact Us</h2>
           <p className="text-muted-foreground leading-relaxed">
             If you have questions about this Privacy Policy, please contact us
-            through our <a href="/contact" className="text-primary hover:underline">contact page</a>.
+            through our{" "}
+            <a href="/contact" className="text-primary hover:underline">
+              contact page
+            </a>
+            .
           </p>
         </section>
       </div>
