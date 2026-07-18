@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://cline-tube.vercel.app",
+  ),
   title: {
     default: "CineTube — Movie & Series Rating Portal",
     template: "%s | CineTube",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -436,9 +437,12 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-end">
               <div className="relative shrink-0 group/avatar">
                 {profile.image ? (
-                  <img
+                  <Image
                     src={profile.image}
                     alt={displayName}
+                    width={112}
+                    height={112}
+                    sizes="(min-width: 768px) 112px, 96px"
                     className="h-24 w-24 rounded-2xl object-cover ring-4 ring-zinc-950 shadow-2xl md:h-28 md:w-28"
                   />
                 ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -264,16 +265,22 @@ export default function MediaDetailPage({
       <section className="relative isolate">
         <div className="absolute inset-0 h-[78vh] min-h-[520px] overflow-hidden">
           {media.backdropUrl ? (
-            <img
+            <Image
               src={media.backdropUrl}
               alt=""
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
             />
           ) : media.posterUrl ? (
-            <img
+            <Image
               src={media.posterUrl}
               alt=""
-              className="w-full h-full object-cover blur-2xl scale-110 opacity-40"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover blur-2xl scale-110 opacity-40"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-950" />
@@ -300,10 +307,13 @@ export default function MediaDetailPage({
               className="relative w-[180px] md:w-[260px] aspect-[2/3] shrink-0 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl shadow-black/70"
             >
               {media.posterUrl ? (
-                <img
+                <Image
                   src={media.posterUrl}
                   alt={media.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 260px, 180px"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-zinc-900">
@@ -630,11 +640,12 @@ function RelatedMedia({ slug }: { slug: string }) {
           <Link key={item.id} href={`/browse/${item.slug}`} className="group">
             <div className="aspect-[2/3] rounded-xl overflow-hidden bg-zinc-900 relative">
               {item.posterUrl ? (
-                <img
+                <Image
                   src={item.posterUrl}
                   alt={item.title}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  loading="lazy"
+                  fill
+                  sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  className="object-cover transition-transform group-hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-3xl">

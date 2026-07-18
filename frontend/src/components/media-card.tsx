@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Star, Eye, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,11 +33,12 @@ export function MediaCard({ item, disableAnimation = false }: MediaCardProps) {
       <Card className="overflow-hidden bg-zinc-900/40 border-zinc-900 rounded-2xl hover:border-red-500/50 hover:shadow-lg hover:shadow-red-950/10 transition-all duration-300 h-full flex flex-col justify-between">
         <div className="aspect-[2/3] bg-zinc-950 flex items-center justify-center relative overflow-hidden">
           {item.posterUrl ? (
-            <img
+            <Image
               src={item.posterUrl}
               alt={item.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
+              fill
+              sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
             />
           ) : (
             <span className="text-4xl text-zinc-700">🎬</span>
