@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { UploadCloud, X, FileImage, AlertTriangle } from "lucide-react";
+import { UploadCloud, X, AlertTriangle } from "lucide-react";
 
 interface ImageUploadProps {
   currentImageUrl?: string | null;

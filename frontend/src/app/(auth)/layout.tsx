@@ -14,6 +14,9 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       {/* Left: Brand Panel (desktop only) */}
       <div className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden bg-zinc-950 text-white">
         <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/80 to-red-950/40" />
@@ -41,7 +44,11 @@ export default function AuthLayout({
       </div>
 
       {/* Right: Form Area */}
-      <div className="flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20 relative bg-background">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20 relative bg-background"
+      >
         {/* Mobile brand header */}
         <div className="lg:hidden mb-8">
           <Link
@@ -53,7 +60,7 @@ export default function AuthLayout({
           </Link>
         </div>
         {children}
-      </div>
+      </main>
     </div>
   );
 }

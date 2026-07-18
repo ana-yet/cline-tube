@@ -6,7 +6,6 @@ import apiClient from "@/lib/api";
 import type { ApiResponse } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Calendar, ArrowRight } from "lucide-react";
 
 interface ContentPost {

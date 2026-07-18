@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/api";
 import type { ApiResponse, MediaSummary, PaginatedResponse } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -17,14 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Star,
   Search,
   SlidersHorizontal,
-  Eye,
   Film,
   Grid,
   DollarSign,
-  Calendar,
 } from "lucide-react";
 import { MediaCard } from "@/components/media-card";
 import { motion, AnimatePresence } from "framer-motion";

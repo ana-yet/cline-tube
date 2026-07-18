@@ -291,8 +291,6 @@ export default function ProfilePage() {
     },
   });
 
-  // Image upload mutation
-  const imageInputRef = useState<HTMLInputElement | null>(null);
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();

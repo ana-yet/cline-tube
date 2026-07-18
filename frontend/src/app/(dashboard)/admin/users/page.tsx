@@ -6,9 +6,8 @@ import apiClient from "@/lib/api";
 import type { ApiResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 
 /**
  * Admin Users Page
@@ -51,15 +50,6 @@ export default function AdminUsersPage() {
   const deactivateMutation = useMutation({
     mutationFn: async (userId: string) => {
       await apiClient.post(`/admin/users/${userId}/deactivate`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-    },
-  });
-
-  const reactivateMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await apiClient.post(`/admin/users/${userId}/reactivate`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });

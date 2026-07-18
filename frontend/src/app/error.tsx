@@ -7,7 +7,6 @@
  * Displays a user-friendly error message with a retry button.
  */
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };

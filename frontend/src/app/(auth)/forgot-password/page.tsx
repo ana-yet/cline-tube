@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
             Lost your way in the Cineverse?
           </h2>
           <p className="text-zinc-300 text-lg">
-            No worries. Enter your email address and we'll send you a ticket to
+            No worries. Enter your email address and we&apos;ll send you a ticket to
             get back in.
           </p>
         </div>
