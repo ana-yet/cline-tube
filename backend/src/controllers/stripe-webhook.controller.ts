@@ -11,6 +11,7 @@ export async function handleWebhook(
   if (!signature) {
     res.status(400).json({
       success: false,
+      requestId: req.requestId,
       error: {
         message: "Missing stripe-signature header",
         code: "MISSING_SIGNATURE",
@@ -29,6 +30,7 @@ export async function handleWebhook(
   } catch {
     res.status(400).json({
       success: false,
+      requestId: req.requestId,
       error: { message: "Invalid webhook signature", code: "WEBHOOK_ERROR" },
     });
     return;
@@ -39,7 +41,7 @@ export async function handleWebhook(
 
     await paymentService.handleWebhookEvent(event);
 
-    res.json({ received: true });
+    res.json({ success: true, requestId: req.requestId, data: { received: true } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Webhook error";
     console.error("Stripe webhook processing failed", {
@@ -48,6 +50,7 @@ export async function handleWebhook(
     });
     res.status(500).json({
       success: false,
+      requestId: req.requestId,
       error: { message: "Webhook processing failed", code: "WEBHOOK_ERROR" },
     });
   }

@@ -12,7 +12,6 @@ import { webhookRouter } from "./routes/webhook.routes";
 import { errorHandler } from "./middlewares/errorHandler";
 import { requestId } from "./middlewares/requestId";
 import { apiLimiter } from "./middlewares/rateLimiter";
-import { logger } from "./utils/logger";
 
 const app = express();
 
@@ -56,11 +55,12 @@ app.use(cookieParser());
 
 app.use("/api", apiLimiter);
 
-app.get("/api/health", async (_req, res) => {
+app.get("/api/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.json({
       success: true,
+      requestId: req.requestId,
       data: {
         status: "healthy",
         database: "connected",
@@ -71,6 +71,7 @@ app.get("/api/health", async (_req, res) => {
   } catch {
     res.status(503).json({
       success: false,
+      requestId: req.requestId,
       data: {
         status: "unhealthy",
         database: "disconnected",
@@ -81,12 +82,20 @@ app.get("/api/health", async (_req, res) => {
 });
 
 // Readiness probe — returns 200 only when the app is ready to serve traffic
-app.get("/api/ready", async (_req, res) => {
+app.get("/api/ready", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({ status: "ready" });
+    res.status(200).json({
+      success: true,
+      requestId: req.requestId,
+      data: { status: "ready" },
+    });
   } catch {
-    res.status(503).json({ status: "not_ready" });
+    res.status(503).json({
+      success: false,
+      requestId: req.requestId,
+      data: { status: "not_ready" },
+    });
   }
 });
 
@@ -95,6 +104,7 @@ app.use("/api", apiRouter);
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
+    requestId: res.locals.requestId,
     error: {
       message: "Route not found",
       code: "NOT_FOUND",

@@ -67,7 +67,6 @@ function formatMessage(
 
 export const logger = {
   info(message: string, meta?: Record<string, unknown>) {
-    // eslint-disable-next-line no-console
     console.log(formatMessage("info", message, meta));
   },
 

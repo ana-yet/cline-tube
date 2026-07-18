@@ -46,6 +46,7 @@ export interface PaginatedResponse<T> {
 // API Response Envelope
 export interface ApiResponse<T = unknown> {
   success: boolean;
+  requestId?: string;
   data?: T;
   error?: {
     message: string;

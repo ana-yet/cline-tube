@@ -155,6 +155,7 @@ export interface Subscription {
 
 export interface ApiResponse<T> {
   success: boolean;
+  requestId?: string;
   data: T;
   meta?: PaginationMeta;
 }
@@ -166,6 +167,7 @@ export interface PaginatedResponse<T> {
 
 export interface ApiError {
   success: false;
+  requestId?: string;
   error: {
     message: string;
     code: string;

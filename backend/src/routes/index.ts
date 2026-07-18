@@ -12,9 +12,11 @@ import { contentRouter } from "./content.routes";
 import { cleanupRouter } from "./cleanup.routes";
 import { webhookRouter } from "./webhook.routes";
 import { dashboardRouter } from "./dashboard.routes";
+import { contractRouter } from "./contract.routes";
 
 const router = Router();
 
+router.use("/", contractRouter);
 router.use("/auth", authRouter);
 router.use("/media", mediaRouter);
 router.use("/reviews", reviewRouter);

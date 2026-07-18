@@ -31,6 +31,7 @@ export const authenticate = async (
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "Access token required",
           code: "UNAUTHORIZED",
@@ -56,6 +57,7 @@ export const authenticate = async (
     if (!user || user.isDeleted) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "User not found or account deactivated",
           code: "UNAUTHORIZED",
@@ -77,6 +79,7 @@ export const authenticate = async (
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "Access token expired",
           code: "TOKEN_EXPIRED",
@@ -88,6 +91,7 @@ export const authenticate = async (
     if (error instanceof jwt.JsonWebTokenError) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "Invalid access token",
           code: "INVALID_TOKEN",

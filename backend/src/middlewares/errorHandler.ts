@@ -21,6 +21,7 @@ export const errorHandler = (
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
       success: false,
+      requestId: req.requestId,
       error: {
         message: err.message,
         code: err.errorCode,
@@ -33,6 +34,7 @@ export const errorHandler = (
   if (err instanceof ZodError) {
     res.status(400).json({
       success: false,
+      requestId: req.requestId,
       error: {
         message: "Validation failed",
         code: "VALIDATION_ERROR",
@@ -50,6 +52,7 @@ export const errorHandler = (
       case "P2002": // unique constraint
         res.status(409).json({
           success: false,
+          requestId: req.requestId,
           error: {
             message: "A record with the given value already exists",
             code: "DUPLICATE_ENTRY",
@@ -60,6 +63,7 @@ export const errorHandler = (
       case "P2025": // record not found
         res.status(404).json({
           success: false,
+          requestId: req.requestId,
           error: {
             message: "Record not found",
             code: "NOT_FOUND",
@@ -70,6 +74,7 @@ export const errorHandler = (
       case "P2003": // foreign key constraint
         res.status(400).json({
           success: false,
+          requestId: req.requestId,
           error: {
             message: "Referenced record does not exist",
             code: "REFERENCE_ERROR",
@@ -80,6 +85,7 @@ export const errorHandler = (
       default:
         res.status(400).json({
           success: false,
+          requestId: req.requestId,
           error: {
             message: "Database operation failed",
             code: "DATABASE_ERROR",
@@ -92,6 +98,7 @@ export const errorHandler = (
   if (err instanceof TokenExpiredError) {
     res.status(401).json({
       success: false,
+      requestId: req.requestId,
       error: {
         message: "Token expired",
         code: "TOKEN_EXPIRED",
@@ -103,6 +110,7 @@ export const errorHandler = (
   if (err instanceof JsonWebTokenError) {
     res.status(401).json({
       success: false,
+      requestId: req.requestId,
       error: {
         message: "Invalid token",
         code: "INVALID_TOKEN",
@@ -113,6 +121,7 @@ export const errorHandler = (
 
   res.status(500).json({
     success: false,
+    requestId: req.requestId,
     error: {
       message:
         process.env.NODE_ENV === "production"
