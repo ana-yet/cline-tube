@@ -63,6 +63,40 @@ const envSchema = z
       });
     }
 
+    if (value.NODE_ENV === "production") {
+      const frontendUrl = new URL(value.FRONTEND_URL);
+      if (frontendUrl.protocol !== "https:") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["FRONTEND_URL"],
+          message: "Production FRONTEND_URL must use HTTPS",
+        });
+      }
+
+      if (["localhost", "127.0.0.1", "::1"].includes(frontendUrl.hostname)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["FRONTEND_URL"],
+          message: "Production FRONTEND_URL cannot point to localhost",
+        });
+      }
+
+      if (value.STRIPE_SECRET_KEY.startsWith("sk_test_")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_SECRET_KEY"],
+          message: "Production Stripe secret key must not use test mode",
+        });
+      }
+
+      if (value.STRIPE_WEBHOOK_SECRET.includes("placeholder")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_WEBHOOK_SECRET"],
+          message: "Production Stripe webhook secret cannot be a placeholder",
+        });
+      }
+    }
     if (emailMode === "http") {
       if (!value.EMAIL_DELIVERY_ENDPOINT) {
         ctx.addIssue({
