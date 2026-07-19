@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
  *
  * Populates the database with:
  * 1. 12 Genres
- * 2. Admin user (admin@cinetube.com / Admin123!)
+ * 2. Admin user (configured with SEED_ADMIN_PASSWORD)
  * 3. 20 realistic movies and series
  *
  * Idempotent: Uses upserts — safe to run multiple times.
@@ -33,6 +33,11 @@ const GENRES = [
   "Thriller",
   "Animation",
 ];
+const STREAM_BASE_URL = process.env.CINETUBE_STREAM_BASE_URL || "https://watch.cinetube.app/stream";
+
+function streamUrl(path: string): string {
+  return new URL(path, `${STREAM_BASE_URL.replace(/\/+$/, "")}/`).toString();
+}
 
 // ── Media ─────────────────────────────────────────────────
 
@@ -42,7 +47,7 @@ interface MediaSeed {
   synopsis: string;
   type: MediaType;
   pricingType: PricingType;
-  streamingLink: string;
+  streamPath: string;
   posterUrl: string;
   backdropUrl: string;
   releaseYear: number;
@@ -60,7 +65,7 @@ const MEDIA: MediaSeed[] = [
       "When the menace known as the Joker wreaks havoc and chaos on Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice and come closer to the hero the city deserves.",
     type: "MOVIE",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/dark-knight",
+    streamPath: "dark-knight",
     posterUrl: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911BTUgMe0nQ.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/hkBaDkMWbLaf8B1lsWsKX7Ew3Xq.jpg",
     releaseYear: 2008,
@@ -75,7 +80,7 @@ const MEDIA: MediaSeed[] = [
       "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the project and his team to disaster.",
     type: "MOVIE",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/inception",
+    streamPath: "inception",
     posterUrl: "https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/s3TBrRGB1iav7gFOCNx3H31MoES.jpg",
     releaseYear: 2010,
@@ -90,7 +95,7 @@ const MEDIA: MediaSeed[] = [
       "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
     type: "MOVIE",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/pulp-fiction",
+    streamPath: "pulp-fiction",
     posterUrl: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg",
     releaseYear: 1994,
@@ -105,7 +110,7 @@ const MEDIA: MediaSeed[] = [
       "Over the course of several years, two convicts form a friendship, seeking consolation and, eventually, redemption through basic compassion.",
     type: "MOVIE",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/shawshank",
+    streamPath: "shawshank",
     posterUrl: "https://image.tmdb.org/t/p/w500/9cjIGRQL1JruKhBMFBPEEkNUOVP.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg",
     releaseYear: 1994,
@@ -120,7 +125,7 @@ const MEDIA: MediaSeed[] = [
       "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, where humans are changed into beasts.",
     type: "MOVIE",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/spirited-away",
+    streamPath: "spirited-away",
     posterUrl: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/Ab8mkHmkYADjU7wQiOkia9BzGvS.jpg",
     releaseYear: 2001,
@@ -135,7 +140,7 @@ const MEDIA: MediaSeed[] = [
       "A young African-American visits his white girlfriend's parents for the weekend, where his simmering uneasiness about their reception of him eventually reaches a boiling point.",
     type: "MOVIE",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/get-out",
+    streamPath: "get-out",
     posterUrl: "https://image.tmdb.org/t/p/w500/tFXcEccSQMf3lfhfXKSU9iRBpa3.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/sGfBuNPFOGbHm2OXChyUvbcR1Fm.jpg",
     releaseYear: 2017,
@@ -150,7 +155,7 @@ const MEDIA: MediaSeed[] = [
       "While navigating their careers in Los Angeles, a pianist and an actress fall in love while attempting to reconcile their aspirations for the future.",
     type: "MOVIE",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/la-la-land",
+    streamPath: "la-la-land",
     posterUrl: "https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/ylXCdC106IKiarftHkcacasaAcb.jpg",
     releaseYear: 2016,
@@ -165,7 +170,7 @@ const MEDIA: MediaSeed[] = [
       "When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot is tasked with piloting a spacecraft along with a team of researchers on a mission through a wormhole to find a new home for humanity.",
     type: "MOVIE",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/interstellar",
+    streamPath: "interstellar",
     posterUrl: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK1TVg7C.jpg",
     releaseYear: 2014,
@@ -180,7 +185,7 @@ const MEDIA: MediaSeed[] = [
       "A writer encounters the owner of an aging high-class hotel, who tells him of his early years serving as a lobby boy in the hotel's glorious years under an exceptional concierge.",
     type: "MOVIE",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/grand-budapest",
+    streamPath: "grand-budapest",
     posterUrl: "https://image.tmdb.org/t/p/w500/eWDyYq6Iu2pjNiIZLJYCmGlPTr2.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/nX5XotM9yprCKarRH4fzOq1VM1J.jpg",
     releaseYear: 2014,
@@ -195,7 +200,7 @@ const MEDIA: MediaSeed[] = [
       "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
     type: "MOVIE",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/parasite",
+    streamPath: "parasite",
     posterUrl: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/TU9bcgLCEo3GJiQWFwm5yS1Fdn.jpg",
     releaseYear: 2019,
@@ -212,7 +217,7 @@ const MEDIA: MediaSeed[] = [
       "A chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine with a former student to secure his family's future.",
     type: "SERIES",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/breaking-bad",
+    streamPath: "breaking-bad",
     posterUrl: "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
     releaseYear: 2008,
@@ -227,7 +232,7 @@ const MEDIA: MediaSeed[] = [
       "When a young boy disappears, his mother, a police chief, and his friends must confront terrifying supernatural forces in order to get him back.",
     type: "SERIES",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/stranger-things",
+    streamPath: "stranger-things",
     posterUrl: "https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/56v2KjBlYj3Ey2t4WDrYRAin39.jpg",
     releaseYear: 2016,
@@ -242,7 +247,7 @@ const MEDIA: MediaSeed[] = [
       "A mockumentary on a group of typical office workers, where the workday consists of ego clashes, inappropriate behavior, and tedium.",
     type: "SERIES",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/the-office",
+    streamPath: "the-office",
     posterUrl: "https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gdi3GZ1YjSy0XoQ.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/3jsRjatWMVcTGrxmax0NU1FPhHj.jpg",
     releaseYear: 2005,
@@ -257,7 +262,7 @@ const MEDIA: MediaSeed[] = [
       "Nine noble families fight for control over the lands of Westeros, while an ancient enemy returns after being dormant for millennia.",
     type: "SERIES",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/game-of-thrones",
+    streamPath: "game-of-thrones",
     posterUrl: "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/suopoADq6k8YC09c0iFSGGM4ICY.jpg",
     releaseYear: 2011,
@@ -272,7 +277,7 @@ const MEDIA: MediaSeed[] = [
       "A modern update finds the famous sleuth and his doctor partner solving crime in 21st-century London.",
     type: "SERIES",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/sherlock",
+    streamPath: "sherlock",
     posterUrl: "https://image.tmdb.org/t/p/w500/f9z4ycm9k5C4JRQJ0dFNrR.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/luYqkIMj2w1MA3Gj5LmEb2m2gBC.jpg",
     releaseYear: 2010,
@@ -287,7 +292,7 @@ const MEDIA: MediaSeed[] = [
       "Geralt of Rivia, a solitary monster hunter, struggles to find his place in a world where people often prove more wicked than beasts.",
     type: "SERIES",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/the-witcher",
+    streamPath: "the-witcher",
     posterUrl: "https://image.tmdb.org/t/p/w500/7vjaCdMw15FEbXyLQTVa04URsPm.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/jBJWaqoSCiARWtfV0GlqHrcdiJq.jpg",
     releaseYear: 2019,
@@ -302,7 +307,7 @@ const MEDIA: MediaSeed[] = [
       "An American football coach is hired to manage a British soccer team despite having no experience coaching soccer.",
     type: "SERIES",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/ted-lasso",
+    streamPath: "ted-lasso",
     posterUrl: "https://image.tmdb.org/t/p/w500/caGVr9Il2gj8bN4ow6qsLm60TxM.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/xGex7FzxBMIp2V5MIiCMbPlEBAG.jpg",
     releaseYear: 2020,
@@ -317,7 +322,7 @@ const MEDIA: MediaSeed[] = [
       "In April 1986, the city of Chernobyl in the Soviet Union suffers a catastrophic nuclear disaster. Valery Legasov and a team of scientists work to contain the damage.",
     type: "SERIES",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/chernobyl",
+    streamPath: "chernobyl",
     posterUrl: "https://image.tmdb.org/t/p/w500/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/900hLhKHj4VQSS47rOveLjTGfR1.jpg",
     releaseYear: 2019,
@@ -332,7 +337,7 @@ const MEDIA: MediaSeed[] = [
       "Set in the utopian region of Piltover and the oppressed underground of Zaun, the story follows the origins of two iconic League of Legends champions and the power that will tear them apart.",
     type: "SERIES",
     pricingType: "FREE",
-    streamingLink: "https://example.com/stream/arcane",
+    streamPath: "arcane",
     posterUrl: "https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/q54qEgagGOYCq5D1903eCRYdMkM.jpg",
     releaseYear: 2021,
@@ -347,7 +352,7 @@ const MEDIA: MediaSeed[] = [
       "A young chef from the fine dining world returns to Chicago to run his family's sandwich shop after a heartbreaking death in the family.",
     type: "SERIES",
     pricingType: "PREMIUM",
-    streamingLink: "https://example.com/stream/the-bear",
+    streamPath: "the-bear",
     posterUrl: "https://image.tmdb.org/t/p/w500/sHFlRFVR6gXLRSEAS3ia0oPgfp.jpg",
     backdropUrl: "https://image.tmdb.org/t/p/w1280/zPIug5giU8ugg0gBK7PsFcLMg0.jpg",
     releaseYear: 2022,
@@ -380,8 +385,13 @@ async function seedGenres(): Promise<Map<string, string>> {
 async function seedAdmin() {
   console.log("Seeding admin user...");
 
-  const email = "admin@cinetube.com";
-  const password = "Admin123!";
+  const email = process.env.SEED_ADMIN_EMAIL || "admin@cinetube.com";
+  const password = process.env.SEED_ADMIN_PASSWORD;
+
+  if (!password || password.length < 12) {
+    throw new Error("SEED_ADMIN_PASSWORD must be set to at least 12 characters before seeding");
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
 
   await prisma.user.upsert({
@@ -402,7 +412,7 @@ async function seedAdmin() {
     },
   });
 
-  console.log(`Admin: ${email} / ${password}`);
+  console.log(`Seeded admin user ${email}`);
 }
 
 async function seedMedia(genreMap: Map<string, string>) {
@@ -424,7 +434,7 @@ async function seedMedia(genreMap: Map<string, string>) {
         synopsis: item.synopsis,
         type: item.type,
         pricingType: item.pricingType,
-        streamingLink: item.streamingLink,
+        streamingLink: streamUrl(item.streamPath),
         posterUrl: item.posterUrl,
         backdropUrl: item.backdropUrl,
         releaseYear: item.releaseYear,
@@ -437,7 +447,7 @@ async function seedMedia(genreMap: Map<string, string>) {
         synopsis: item.synopsis,
         type: item.type,
         pricingType: item.pricingType,
-        streamingLink: item.streamingLink,
+        streamingLink: streamUrl(item.streamPath),
         posterUrl: item.posterUrl,
         backdropUrl: item.backdropUrl,
         releaseYear: item.releaseYear,

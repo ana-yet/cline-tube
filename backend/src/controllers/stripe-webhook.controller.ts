@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as paymentService from "../services/payment.service";
+import { logger } from "../utils/logger";
 
 // Receives Stripe webhook events; the raw body is required for signature checks.
 export async function handleWebhook(
@@ -37,14 +38,14 @@ export async function handleWebhook(
   }
 
   try {
-    console.log("Stripe webhook received", { type: event.type });
+    logger.info("Stripe webhook received", { type: event.type });
 
     await paymentService.handleWebhookEvent(event);
 
     res.json({ success: true, requestId: req.requestId, data: { received: true } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Webhook error";
-    console.error("Stripe webhook processing failed", {
+    logger.error("Stripe webhook processing failed", {
       type: event.type,
       message,
     });
