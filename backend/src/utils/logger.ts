@@ -10,7 +10,7 @@ import { env } from "../config/env";
  * Security: Sensitive fields are redacted automatically.
  */
 
-const SENSITIVE_FIELDS = [
+export const SENSITIVE_FIELDS = [
   "password",
   "passwordHash",
   "token",
@@ -26,7 +26,7 @@ const SENSITIVE_FIELDS = [
   "api_secret",
 ];
 
-function redact(obj: unknown): unknown {
+export function redact(obj: unknown): unknown {
   if (typeof obj !== "object" || obj === null) return obj;
   if (Array.isArray(obj)) return obj.map(redact);
 
@@ -43,6 +43,25 @@ function redact(obj: unknown): unknown {
   return redacted;
 }
 
+export function redactUrl(rawUrl?: string): string | undefined {
+  if (!rawUrl) return rawUrl;
+
+  try {
+    const url = new URL(rawUrl, "http://cinetube.local");
+    for (const key of Array.from(url.searchParams.keys())) {
+      if (SENSITIVE_FIELDS.some((field) => key.toLowerCase().includes(field))) {
+        url.searchParams.set(key, "[REDACTED]");
+      }
+    }
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return rawUrl.replace(
+      /([?&][^=]*(?:token|secret|password|authorization|cookie|key)[^=]*=)[^&]*/gi,
+      "$1[REDACTED]",
+    );
+  }
+}
+
 function formatMessage(
   level: string,
   message: string,
@@ -55,7 +74,10 @@ function formatMessage(
       level,
       message,
       timestamp: new Date().toISOString(),
-      ...(meta ? { meta: redact(meta) } : {}),
+          service: "cinetube-api",
+          environment: env.NODE_ENV,
+          release: process.env.RENDER_GIT_COMMIT || process.env.COMMIT_SHA,
+          ...(meta ? { meta: redact(meta) } : {}),
     });
   }
 

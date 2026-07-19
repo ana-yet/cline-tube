@@ -2,6 +2,7 @@ import "dotenv/config";
 import app from "./app";
 import { env } from "./config/env";
 import prisma from "./config/prisma";
+import { markNotReady, markReady } from "./ops/readiness";
 import { logger } from "./utils/logger";
 
 let server: ReturnType<typeof app.listen>;
@@ -9,6 +10,7 @@ let server: ReturnType<typeof app.listen>;
 async function main() {
   try {
     await prisma.$connect();
+    markReady();
     logger.info("Database connected");
 
     server = app.listen(env.PORT, () => {
@@ -29,6 +31,7 @@ async function main() {
 
 // Drain in-flight requests, disconnect Prisma, then exit.
 const gracefulShutdown = async (signal: string) => {
+  markNotReady();
   logger.info(`Received ${signal}, draining connections...`);
   if (server) {
     server.close(async () => {

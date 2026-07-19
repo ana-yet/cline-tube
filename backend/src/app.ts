@@ -12,6 +12,8 @@ import { webhookRouter } from "./routes/webhook.routes";
 import { errorHandler } from "./middlewares/errorHandler";
 import { requestId } from "./middlewares/requestId";
 import { apiLimiter } from "./middlewares/rateLimiter";
+import { isAcceptingTraffic } from "./ops/readiness";
+import { redactUrl } from "./utils/logger";
 
 const app = express();
 
@@ -32,7 +34,7 @@ if (process.env.NODE_ENV !== "test") {
           level: "info",
           message: "HTTP request",
           method: tokens.method(req, res),
-          url: tokens.url(req, res),
+          url: redactUrl(tokens.url(req, res)),
           status: Number(tokens.status(req, res)),
           responseTime: Number(tokens["response-time"](req, res)),
           requestId: (req as unknown as Record<string, unknown>)
@@ -53,36 +55,31 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-app.use("/api", apiLimiter);
+app.get("/api/health", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    success: true,
+    requestId: req.requestId,
+    data: {
+      status: "live",
+      uptime: process.uptime(),
+    },
+  });
+});
 
-app.get("/api/health", async (req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({
-      success: true,
-      requestId: req.requestId,
-      data: {
-        status: "healthy",
-        database: "connected",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-      },
-    });
-  } catch {
+// Readiness probe — checks traffic drain state and the database dependency.
+app.get("/api/ready", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  if (!isAcceptingTraffic()) {
     res.status(503).json({
       success: false,
       requestId: req.requestId,
-      data: {
-        status: "unhealthy",
-        database: "disconnected",
-        timestamp: new Date().toISOString(),
-      },
+      data: { status: "not_ready", reason: "draining" },
     });
+    return;
   }
-});
 
-// Readiness probe — returns 200 only when the app is ready to serve traffic
-app.get("/api/ready", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({
@@ -94,10 +91,12 @@ app.get("/api/ready", async (req, res) => {
     res.status(503).json({
       success: false,
       requestId: req.requestId,
-      data: { status: "not_ready" },
+      data: { status: "not_ready", reason: "database" },
     });
   }
 });
+
+app.use("/api", apiLimiter);
 
 app.use("/api", apiRouter);
 
