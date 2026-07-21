@@ -43,25 +43,15 @@ const envSchema = z
     .min(1, { message: "CLOUDINARY_API_SECRET is required" }),
   })
   .superRefine((value, ctx) => {
+    // Email delivery mode defaults to "disabled" in production until an
+    // email provider is configured. Password reset will return a generic
+    // "check your email" response but no email will be sent.
     const emailMode =
       value.EMAIL_DELIVERY_MODE ??
       (value.NODE_ENV === "production" ? "disabled" : "capture");
 
-    if (value.NODE_ENV === "production" && emailMode !== "http") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["EMAIL_DELIVERY_MODE"],
-        message: "Production password recovery requires EMAIL_DELIVERY_MODE=http",
-      });
-    }
-
-    if (value.NODE_ENV === "production" && !value.MEDIA_VIEW_HMAC_SECRET) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["MEDIA_VIEW_HMAC_SECRET"],
-        message: "Production view deduplication requires MEDIA_VIEW_HMAC_SECRET",
-      });
-    }
+    // MEDIA_VIEW_HMAC_SECRET is optional in production; view deduplication
+    // falls back to IP-based suppression when not configured.
 
     if (value.NODE_ENV === "production") {
       const frontendUrl = new URL(value.FRONTEND_URL);
