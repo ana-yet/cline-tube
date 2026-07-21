@@ -83,7 +83,9 @@ export async function update(
 
     if (req.body.backdropRemoved === true && !getUploadedFiles(req).backdrop) {
       if (existing.backdropPublicId) {
-        cloudinaryService.deleteImage(existing.backdropPublicId).catch(() => {});
+        cloudinaryService
+          .deleteImage(existing.backdropPublicId)
+          .catch(() => {});
       }
     }
 
@@ -180,8 +182,11 @@ export async function recordView(
   next: NextFunction,
 ): Promise<void> {
   try {
-    await mediaService.recordView(req.params.slug, req.ip);
-    sendSuccess(res, { recorded: true });
+    const result = await mediaService.recordView(req.params.slug, {
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }
@@ -196,6 +201,21 @@ export async function getById(
   try {
     const media = await mediaService.getMediaById(req.params.id);
     sendSuccess(res, { media });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// GET /media/:slug/related (public)
+export async function getRelated(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : 8;
+    const items = await mediaService.getRelatedMedia(req.params.slug, limit);
+    sendSuccess(res, { items });
   } catch (error) {
     next(error);
   }

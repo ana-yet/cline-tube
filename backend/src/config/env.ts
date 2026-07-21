@@ -27,6 +27,7 @@ const envSchema = z
   EMAIL_DELIVERY_ENDPOINT: z.string().url().optional(),
   EMAIL_DELIVERY_TOKEN: z.string().min(16).optional(),
   EMAIL_FROM: z.string().min(3).optional(),
+  MEDIA_VIEW_HMAC_SECRET: z.string().min(32).optional(),
   PORT: z.coerce.number().int().positive().default(5000),
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -54,6 +55,48 @@ const envSchema = z
       });
     }
 
+    if (value.NODE_ENV === "production" && !value.MEDIA_VIEW_HMAC_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MEDIA_VIEW_HMAC_SECRET"],
+        message: "Production view deduplication requires MEDIA_VIEW_HMAC_SECRET",
+      });
+    }
+
+    if (value.NODE_ENV === "production") {
+      const frontendUrl = new URL(value.FRONTEND_URL);
+      if (frontendUrl.protocol !== "https:") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["FRONTEND_URL"],
+          message: "Production FRONTEND_URL must use HTTPS",
+        });
+      }
+
+      if (["localhost", "127.0.0.1", "::1"].includes(frontendUrl.hostname)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["FRONTEND_URL"],
+          message: "Production FRONTEND_URL cannot point to localhost",
+        });
+      }
+
+      if (value.STRIPE_SECRET_KEY.startsWith("sk_test_")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_SECRET_KEY"],
+          message: "Production Stripe secret key must not use test mode",
+        });
+      }
+
+      if (value.STRIPE_WEBHOOK_SECRET.includes("placeholder")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_WEBHOOK_SECRET"],
+          message: "Production Stripe webhook secret cannot be a placeholder",
+        });
+      }
+    }
     if (emailMode === "http") {
       if (!value.EMAIL_DELIVERY_ENDPOINT) {
         ctx.addIssue({

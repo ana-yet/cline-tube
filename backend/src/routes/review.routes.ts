@@ -7,6 +7,9 @@ import {
   createReviewSchema,
   updateReviewSchema,
   reviewQuerySchema,
+  createReviewReportSchema,
+  reviewReportQuerySchema,
+  resolveReviewReportSchema,
 } from "../validations/review.validation";
 import { createCommentSchema } from "../validations/comment.validation";
 import * as commentController from "../controllers/comment.controller";
@@ -23,11 +26,14 @@ import * as commentController from "../controllers/comment.controller";
  *   DELETE /reviews/:id        — Delete own review
  *   GET    /reviews/mine       — Get my reviews
  *   POST   /reviews/:id/like   — Toggle like on a review
+ *   POST   /reviews/:id/report — Report a review
  *
  * Admin:
  *   GET  /reviews/pending      — Get pending reviews queue
  *   POST /reviews/:id/approve  — Approve a review
  *   POST /reviews/:id/reject   — Reject a review
+ *   GET  /reviews/reports      — Get review reports queue
+ *   POST /reviews/reports/:reportId/resolve — Resolve/dismiss report
  */
 
 const router = Router();
@@ -88,6 +94,13 @@ router.delete(
 
 router.post("/:id/like", authenticate, reviewController.toggleLike);
 
+router.post(
+  "/:id/report",
+  authenticate,
+  validate(createReviewReportSchema),
+  reviewController.report,
+);
+
 // Admin Routes
 
 router.get(
@@ -96,6 +109,22 @@ router.get(
   authorize({ roles: ["ADMIN"] }),
   validate(reviewQuerySchema, "query"),
   reviewController.getPending,
+);
+
+router.get(
+  "/reports",
+  authenticate,
+  authorize({ roles: ["ADMIN"] }),
+  validate(reviewReportQuerySchema, "query"),
+  reviewController.getReports,
+);
+
+router.post(
+  "/reports/:reportId/resolve",
+  authenticate,
+  authorize({ roles: ["ADMIN"] }),
+  validate(resolveReviewReportSchema),
+  reviewController.resolveReport,
 );
 
 router.post(

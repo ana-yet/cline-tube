@@ -41,6 +41,8 @@ describe("Prisma schema", () => {
       "CheckoutAttempt",
       "ProcessedStripeEvent",
       "PaymentAdjustment",
+      "ReviewModerationAction",
+      "MediaViewDedup",
     ];
 
     for (const model of expectedModels) {
@@ -61,6 +63,7 @@ describe("Prisma schema", () => {
       "StripeEventStatus",
       "PaymentAdjustmentType",
       "PaymentAdjustmentStatus",
+      "ReviewModerationActionType",
     ];
 
     for (const enumName of expectedEnums) {
@@ -107,4 +110,16 @@ describe("Prisma schema", () => {
     expect(schema).toContain("cancelAtPeriodEnd");
     expect(schema).toContain("lastProviderEventTime");
   });
+
+  it("has Phase 5 domain integrity controls", () => {
+    schema = schema || fs.readFileSync(SCHEMA_PATH, "utf-8");
+
+    expect(schema).toContain("model ReviewModerationAction {");
+    expect(schema).toContain("model MediaViewDedup {");
+    expect(schema).toContain("@@unique([reviewId, userId])");
+    expect(schema).toContain("@@unique([mediaId, bucketDate, viewerKey])");
+    expect(schema).toContain("resolvedAt");
+    expect(schema).toContain("resolvedById");
+  });
+
 });

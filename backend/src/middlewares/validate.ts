@@ -23,6 +23,7 @@ export const validate = (
 
         res.status(400).json({
           success: false,
+          requestId: req.requestId,
           error: {
             message: "Validation failed",
             code: "VALIDATION_ERROR",

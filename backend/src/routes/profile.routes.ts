@@ -2,13 +2,16 @@ import { Router } from "express";
 import * as profileController from "../controllers/profile.controller";
 import { validate } from "../middlewares/validate";
 import { authenticate } from "../middlewares/auth";
+import { uploadImage } from "../middlewares/upload";
 import { z } from "zod";
 
 /**
  * Profile Routes
  *
- * GET /profile     — Get current user's profile
- * PUT /profile     — Update current user's profile
+ * GET    /profile          — Get current user's profile
+ * PUT    /profile          — Update current user's profile
+ * POST   /profile/image    — Upload profile image
+ * DELETE /profile/image    — Delete profile image
  */
 
 const updateProfileSchema = z.object({
@@ -27,5 +30,7 @@ router.use(authenticate);
 
 router.get("/", profileController.get);
 router.put("/", validate(updateProfileSchema), profileController.update);
+router.post("/image", uploadImage, profileController.uploadImage);
+router.delete("/image", profileController.deleteImage);
 
 export const profileRouter = router;

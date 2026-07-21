@@ -10,6 +10,7 @@ export const requestId = (
 ): void => {
   const id = (req.headers["x-request-id"] as string) || uuidv4();
   req.requestId = id;
+  res.locals.requestId = id;
   res.setHeader("X-Request-ID", id);
   next();
 };

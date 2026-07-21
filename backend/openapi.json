@@ -1,0 +1,2924 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CineTube API",
+    "version": "phase-2-contract",
+    "description": "Source-owned API route baseline. Responses use { success, requestId, data|error, meta? } envelopes."
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health probe",
+        "tags": [
+          "ops"
+        ],
+        "x-access": "public",
+        "x-validation": [],
+        "x-policy": [],
+        "x-response-dto": "HealthDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing HealthDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/ready": {
+      "get": {
+        "summary": "Readiness probe",
+        "tags": [
+          "ops"
+        ],
+        "x-access": "public",
+        "x-validation": [],
+        "x-policy": [],
+        "x-response-dto": "ReadyDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReadyDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/openapi.json": {
+      "get": {
+        "summary": "OpenAPI contract",
+        "tags": [
+          "contracts"
+        ],
+        "x-access": "public",
+        "x-validation": [],
+        "x-policy": [],
+        "x-response-dto": "OpenApiDocumentDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing OpenApiDocumentDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register account",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "registerSchema"
+        ],
+        "x-policy": [
+          "trusted origin",
+          "auth rate limit"
+        ],
+        "x-response-dto": "AuthSessionDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AuthSessionDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "loginSchema"
+        ],
+        "x-policy": [
+          "trusted origin",
+          "auth rate limit"
+        ],
+        "x-response-dto": "AuthSessionDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AuthSessionDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "Request password reset",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "forgotPasswordSchema"
+        ],
+        "x-policy": [
+          "trusted origin",
+          "auth rate limit"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "summary": "Reset password",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "resetPasswordSchema"
+        ],
+        "x-policy": [
+          "trusted origin",
+          "auth rate limit"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Refresh session",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "refresh cookie family rotation"
+        ],
+        "x-response-dto": "AuthSessionDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AuthSessionDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Logout current session",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "refresh cookie family revoke"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Current user",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "SafeUserDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing SafeUserDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/sessions": {
+      "get": {
+        "summary": "List sessions",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "SessionListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing SessionListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/sessions/{sessionId}": {
+      "delete": {
+        "summary": "Revoke session",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "sessionIdParamsSchema",
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/logout-all": {
+      "post": {
+        "summary": "Logout all sessions",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "summary": "Change password",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "changePasswordSchema",
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media": {
+      "post": {
+        "summary": "Create media",
+        "tags": [
+          "media"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "multipart image",
+          "createMediaSchema"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "MediaDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing MediaDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "get": {
+        "summary": "List media",
+        "tags": [
+          "media"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "mediaQuerySchema",
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [],
+        "x-response-dto": "MediaListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing MediaListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/by-id/{id}": {
+      "get": {
+        "summary": "Admin media by id",
+        "tags": [
+          "media"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "MediaDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing MediaDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/{id}": {
+      "put": {
+        "summary": "Update media",
+        "tags": [
+          "media"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "multipart image",
+          "updateMediaSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "MediaDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing MediaDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete media",
+        "tags": [
+          "media"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/genres": {
+      "get": {
+        "summary": "List genres",
+        "tags": [
+          "media"
+        ],
+        "x-access": "public",
+        "x-validation": [],
+        "x-policy": [],
+        "x-response-dto": "GenreListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenreListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/{slug}/related": {
+      "get": {
+        "summary": "Related media",
+        "tags": [
+          "media"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "slug",
+          "limit<=20"
+        ],
+        "x-policy": [],
+        "x-response-dto": "MediaSummaryListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing MediaSummaryListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/{slug}/stream": {
+      "get": {
+        "summary": "Stream URL",
+        "tags": [
+          "media"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "slug"
+        ],
+        "x-policy": [
+          "authenticated",
+          "premium entitlement"
+        ],
+        "x-response-dto": "StreamDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing StreamDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/{slug}": {
+      "get": {
+        "summary": "Media detail",
+        "tags": [
+          "media"
+        ],
+        "x-access": "optional-auth",
+        "x-validation": [
+          "slug"
+        ],
+        "x-policy": [
+          "hide premium link unless entitled"
+        ],
+        "x-response-dto": "MediaDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing MediaDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/media/{slug}/view": {
+      "post": {
+        "summary": "Record media view",
+        "tags": [
+          "media"
+        ],
+        "x-access": "optional-auth",
+        "x-validation": [
+          "slug"
+        ],
+        "x-policy": [
+          "deduplicated by bounded key"
+        ],
+        "x-response-dto": "ViewRecordDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ViewRecordDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/media/{slug}": {
+      "get": {
+        "summary": "Approved media reviews",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "reviewQuerySchema",
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [
+          "approved visibility"
+        ],
+        "x-response-dto": "ReviewListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/media/{slug}/mine": {
+      "get": {
+        "summary": "My review for media",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "slug"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ReviewNullableDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewNullableDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "summary": "Create review",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "createReviewSchema"
+        ],
+        "x-policy": [
+          "authenticated",
+          "one review per user/media"
+        ],
+        "x-response-dto": "ReviewDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "put": {
+        "summary": "Update review",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "updateReviewSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "owner or admin"
+        ],
+        "x-response-dto": "ReviewDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete review",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "owner or admin"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/mine": {
+      "get": {
+        "summary": "My reviews",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "reviewQuerySchema",
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ReviewListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/comments": {
+      "get": {
+        "summary": "Review comments",
+        "tags": [
+          "comments"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "approved parent visibility"
+        ],
+        "x-response-dto": "CommentListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing CommentListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create comment",
+        "tags": [
+          "comments"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "createCommentSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "CommentDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing CommentDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/comments/{commentId}": {
+      "delete": {
+        "summary": "Delete comment",
+        "tags": [
+          "comments"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "owner or admin"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/like": {
+      "post": {
+        "summary": "Toggle like",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ReviewLikeDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewLikeDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/report": {
+      "post": {
+        "summary": "Report review",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "createReviewReportSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ReviewReportDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewReportDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/pending": {
+      "get": {
+        "summary": "Pending reviews",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "reviewQuerySchema",
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ReviewListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/reports": {
+      "get": {
+        "summary": "Review reports",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "reviewReportQuerySchema",
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ReviewReportListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewReportListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/reports/{reportId}/resolve": {
+      "post": {
+        "summary": "Resolve report",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "resolveReviewReportSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ReviewReportDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewReportDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/approve": {
+      "post": {
+        "summary": "Approve review",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ReviewDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/reject": {
+      "post": {
+        "summary": "Reject review",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ReviewDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReviewDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/upload/image": {
+      "post": {
+        "summary": "Upload image",
+        "tags": [
+          "upload"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "multipart image"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "AssetDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AssetDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/upload/{publicId}": {
+      "delete": {
+        "summary": "Delete uploaded image",
+        "tags": [
+          "upload"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "publicId path"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/watchlist": {
+      "get": {
+        "summary": "My watchlist",
+        "tags": [
+          "watchlist"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "WatchlistDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing WatchlistDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "post": {
+        "summary": "Add to watchlist",
+        "tags": [
+          "watchlist"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "mediaId uuid body"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "WatchlistItemDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing WatchlistItemDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/watchlist/{mediaId}": {
+      "delete": {
+        "summary": "Remove from watchlist",
+        "tags": [
+          "watchlist"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "mediaId uuid param"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "summary": "User dashboard overview",
+        "tags": [
+          "dashboard"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "DashboardDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing DashboardDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "summary": "My profile",
+        "tags": [
+          "profile"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ProfileDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ProfileDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update my profile",
+        "tags": [
+          "profile"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "updateProfileSchema"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ProfileDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ProfileDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/profile/image": {
+      "post": {
+        "summary": "Upload profile image",
+        "tags": [
+          "profile"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "multipart image"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "ProfileImageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ProfileImageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete profile image",
+        "tags": [
+          "profile"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "summary": "Admin dashboard",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "admin",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "AdminDashboardDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AdminDashboardDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "List users",
+        "tags": [
+          "admin-users"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "AdminUserListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AdminUserListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "summary": "User detail",
+        "tags": [
+          "admin-users"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "AdminUserDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AdminUserDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/deactivate": {
+      "post": {
+        "summary": "Deactivate user",
+        "tags": [
+          "admin-users"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "AdminUserDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AdminUserDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/reactivate": {
+      "post": {
+        "summary": "Reactivate user",
+        "tags": [
+          "admin-users"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "AdminUserDetailDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing AdminUserDetailDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/cleanup": {
+      "post": {
+        "summary": "Run cleanup job",
+        "tags": [
+          "ops"
+        ],
+        "x-access": "admin",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "CleanupResultDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing CleanupResultDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/plans": {
+      "get": {
+        "summary": "Plan facts",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "public",
+        "x-validation": [],
+        "x-policy": [],
+        "x-response-dto": "PlanListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing PlanListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/checkout": {
+      "post": {
+        "summary": "Create checkout",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "plan allowlist",
+          "returnPath allowlist",
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "CheckoutAttemptDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing CheckoutAttemptDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/checkout/outcome": {
+      "get": {
+        "summary": "Checkout outcome",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "sessionId"
+        ],
+        "x-policy": [
+          "owned checkout attempt"
+        ],
+        "x-response-dto": "CheckoutOutcomeDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing CheckoutOutcomeDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/subscription": {
+      "get": {
+        "summary": "Current subscription",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "user",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "SubscriptionDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing SubscriptionDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/cancel": {
+      "post": {
+        "summary": "Cancel at period end",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/resume": {
+      "post": {
+        "summary": "Resume renewal",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "user",
+        "x-validation": [
+          "exact Origin",
+          "CSRF token"
+        ],
+        "x-policy": [
+          "authenticated"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/payments/reconcile": {
+      "get": {
+        "summary": "Dry-run reconciliation",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "days 1-90"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ReconciliationReportDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ReconciliationReportDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/contact": {
+      "post": {
+        "summary": "Submit contact",
+        "tags": [
+          "contact"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "submitContactSchema"
+        ],
+        "x-policy": [
+          "rate limited by global policy"
+        ],
+        "x-response-dto": "ContactSubmissionDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContactSubmissionDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "get": {
+        "summary": "List contacts",
+        "tags": [
+          "contact"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "page>=1",
+          "limit<=50",
+          "sort/filter allowlist"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ContactListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContactListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/contact/{id}": {
+      "patch": {
+        "summary": "Update contact status",
+        "tags": [
+          "contact"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "updateContactSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ContactDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContactDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/content": {
+      "get": {
+        "summary": "Published content",
+        "tags": [
+          "content"
+        ],
+        "x-access": "public",
+        "x-validation": [],
+        "x-policy": [
+          "published only"
+        ],
+        "x-response-dto": "ContentListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContentListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create content",
+        "tags": [
+          "content"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "createContentSchema"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ContentDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContentDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/content/admin/all": {
+      "get": {
+        "summary": "All content",
+        "tags": [
+          "content"
+        ],
+        "x-access": "admin",
+        "x-validation": [],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ContentListDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContentListDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/content/{slug}": {
+      "get": {
+        "summary": "Published content detail",
+        "tags": [
+          "content"
+        ],
+        "x-access": "public",
+        "x-validation": [
+          "slug"
+        ],
+        "x-policy": [
+          "published only"
+        ],
+        "x-response-dto": "ContentDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContentDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/content/{id}": {
+      "put": {
+        "summary": "Update content",
+        "tags": [
+          "content"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "updateContentSchema",
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "ContentDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing ContentDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete content",
+        "tags": [
+          "content"
+        ],
+        "x-access": "admin",
+        "x-validation": [
+          "uuid path param"
+        ],
+        "x-policy": [
+          "authenticated",
+          "ADMIN role"
+        ],
+        "x-response-dto": "GenericMessageDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing GenericMessageDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    },
+    "/api/webhooks/stripe": {
+      "post": {
+        "summary": "Stripe webhook",
+        "tags": [
+          "payments"
+        ],
+        "x-access": "webhook",
+        "x-validation": [
+          "raw body",
+          "Stripe signature"
+        ],
+        "x-policy": [
+          "provider signed event"
+        ],
+        "x-response-dto": "WebhookAckDto",
+        "responses": {
+          "200": {
+            "description": "Success envelope containing WebhookAckDto"
+          },
+          "400": {
+            "description": "Validation error envelope"
+          },
+          "401": {
+            "description": "Authentication error envelope"
+          },
+          "403": {
+            "description": "Policy error envelope"
+          },
+          "404": {
+            "description": "Not found error envelope"
+          },
+          "409": {
+            "description": "Conflict error envelope"
+          },
+          "500": {
+            "description": "Internal error envelope"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SuccessEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "requestId",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "data": {},
+          "meta": {
+            "type": "object"
+          }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "requestId",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "const": false
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "error": {
+            "type": "object",
+            "required": [
+              "message",
+              "code"
+            ],
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "details": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

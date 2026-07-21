@@ -18,6 +18,7 @@ export const sendSuccess = <T>(
 ): void => {
   const response: Record<string, unknown> = {
     success: true,
+    requestId: res.locals.requestId,
     data,
   };
 
@@ -37,6 +38,7 @@ export const sendError = (
 ): void => {
   const response: Record<string, unknown> = {
     success: false,
+    requestId: res.locals.requestId,
     error: {
       message,
       code,

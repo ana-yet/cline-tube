@@ -4,6 +4,20 @@ import { env } from "../config/env";
 import prisma from "../config/prisma";
 import { JwtPayload } from "../types";
 
+const LAST_ACTIVE_UPDATE_INTERVAL_MS = 15 * 60 * 1000;
+
+function touchLastActive(userId: string) {
+  const threshold = new Date(Date.now() - LAST_ACTIVE_UPDATE_INTERVAL_MS);
+
+  void prisma.user.updateMany({
+    where: {
+      id: userId,
+      OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: threshold } }],
+    },
+    data: { lastActiveAt: new Date() },
+  }).catch(() => undefined);
+}
+
 // Requires a valid Bearer access token. Re-checks the user in the database on
 // every request so deactivated/soft-deleted accounts are rejected immediately.
 export const authenticate = async (
@@ -17,6 +31,7 @@ export const authenticate = async (
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "Access token required",
           code: "UNAUTHORIZED",
@@ -42,6 +57,7 @@ export const authenticate = async (
     if (!user || user.isDeleted) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "User not found or account deactivated",
           code: "UNAUTHORIZED",
@@ -56,12 +72,14 @@ export const authenticate = async (
       name: user.name ?? undefined,
       role: user.role,
     };
+    touchLastActive(user.id);
 
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "Access token expired",
           code: "TOKEN_EXPIRED",
@@ -73,6 +91,7 @@ export const authenticate = async (
     if (error instanceof jwt.JsonWebTokenError) {
       res.status(401).json({
         success: false,
+        requestId: req.requestId,
         error: {
           message: "Invalid access token",
           code: "INVALID_TOKEN",
@@ -121,6 +140,7 @@ export const optionalAuthenticate = async (
         name: user.name ?? undefined,
         role: user.role,
       };
+      touchLastActive(user.id);
     }
 
     next();

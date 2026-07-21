@@ -4,8 +4,9 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install --include=dev && npx prisma generate --schema=../prisma/schema.prisma && npm run build
+    preDeployCommand: npx prisma migrate deploy --schema=../prisma/schema.prisma
     startCommand: node dist/server.js
-    healthCheckPath: /api/health
+    healthCheckPath: /api/ready
     envVars:
       - key: NODE_ENV
         value: production
@@ -20,6 +21,18 @@ services:
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: FRONTEND_URL
+        sync: false
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: EMAIL_DELIVERY_MODE
+        value: http
+      - key: EMAIL_DELIVERY_ENDPOINT
+        sync: false
+      - key: EMAIL_DELIVERY_TOKEN
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: MEDIA_VIEW_HMAC_SECRET
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false

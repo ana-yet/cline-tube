@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,6 +42,7 @@ import {
   Monitor,
   Trash2,
   LogOut,
+  Camera,
 } from "lucide-react";
 
 // Inline social SVG icons — lucide-react no longer ships social media icons
@@ -180,9 +182,10 @@ export default function ProfilePage() {
   const { data: sessions = [] } = useQuery({
     queryKey: ["auth", "sessions"],
     queryFn: async () => {
-      const { data } = await apiClient.get<
-        ApiResponse<{ sessions: SessionData[] }>
-      >("/auth/sessions");
+      const { data } =
+        await apiClient.get<ApiResponse<{ sessions: SessionData[] }>>(
+          "/auth/sessions",
+        );
       return data.data.sessions;
     },
     enabled: isAuthenticated,
@@ -195,10 +198,7 @@ export default function ProfilePage() {
   }, [checkoutSuccess, isAuthenticated, queryClient]);
 
   useEffect(() => {
-    if (
-      checkoutSuccess &&
-      subscription?.entitlement.active
-    ) {
+    if (checkoutSuccess && subscription?.entitlement.active) {
       setSubscriptionActivated(true);
       queryClient.invalidateQueries({ queryKey: ["media"] });
     }
@@ -289,6 +289,36 @@ export default function ProfilePage() {
     },
     onSuccess: async () => {
       await logout();
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      await apiClient.post("/profile/image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+    onError: (err: unknown) => {
+      const apiError = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
+      setError(
+        apiError.response?.data?.error?.message || "Failed to upload image",
+      );
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.delete("/profile/image");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
   });
 
@@ -405,17 +435,52 @@ export default function ProfilePage() {
         <div className="container relative mx-auto max-w-6xl px-4 pb-8 pt-10 md:pt-14">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-end">
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 group/avatar">
                 {profile.image ? (
-                  <img
+                  <Image
                     src={profile.image}
                     alt={displayName}
+                    width={112}
+                    height={112}
+                    sizes="(min-width: 768px) 112px, 96px"
                     className="h-24 w-24 rounded-2xl object-cover ring-4 ring-zinc-950 shadow-2xl md:h-28 md:w-28"
                   />
                 ) : (
                   <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 text-2xl font-bold text-white ring-4 ring-zinc-950 shadow-2xl md:h-28 md:w-28 md:text-3xl">
                     {initials}
                   </div>
+                )}
+                {/* Image upload overlay */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/jpeg,image/png,image/webp";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          setError("Image must be under 5MB");
+                          return;
+                        }
+                        uploadImageMutation.mutate(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+                {/* Delete image button */}
+                {profile.image && (
+                  <button
+                    onClick={() => deleteImageMutation.mutate()}
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                    title="Remove image"
+                  >
+                    ×
+                  </button>
                 )}
                 {isPremium && (
                   <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-950 bg-amber-500 text-zinc-950 shadow-lg">
@@ -475,7 +540,8 @@ export default function ProfilePage() {
             <AlertDescription className="flex items-center gap-2">
               <Check className="h-4 w-4" />
               <span>
-                Subscription activated! You now have {subscription?.tier} access.
+                Subscription activated! You now have {subscription?.tier}{" "}
+                access.
               </span>
             </AlertDescription>
           </Alert>
@@ -682,7 +748,11 @@ export default function ProfilePage() {
                 {[
                   { href: "/browse", label: "Browse catalog", icon: Film },
                   { href: "/watchlist", label: "My watchlist", icon: Bookmark },
-                  { href: "/pricing", label: "Plans & pricing", icon: Sparkles },
+                  {
+                    href: "/pricing",
+                    label: "Plans & pricing",
+                    icon: Sparkles,
+                  },
                 ].map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}
@@ -997,7 +1067,9 @@ export default function ProfilePage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-3">
-                      <span className="text-sm text-zinc-500">Member since</span>
+                      <span className="text-sm text-zinc-500">
+                        Member since
+                      </span>
                       <span className="text-sm font-medium text-zinc-200">
                         {joinedDate}
                       </span>
@@ -1158,7 +1230,8 @@ export default function ProfilePage() {
                                     )}
                                   </div>
                                   <p className="text-xs text-zinc-500">
-                                    Last used {formatSessionDate(session.lastUsedAt)}
+                                    Last used{" "}
+                                    {formatSessionDate(session.lastUsedAt)}
                                   </p>
                                 </div>
                               </div>

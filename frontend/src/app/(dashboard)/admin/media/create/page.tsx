@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,6 @@ import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/image-upload";
 import { useAuth } from "@/providers/auth-provider";
 import { Film, AlertCircle } from "lucide-react";
-import Link from "next/link";
 
 interface GenreOption {
   id: string;
@@ -48,7 +47,7 @@ export default function CreateMediaPage() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [backdropFile, setBackdropFile] = useState<File | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageError] = useState<string | null>(null);
 
   const { isAuthenticated } = useAuth();
 

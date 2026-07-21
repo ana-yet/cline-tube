@@ -2,15 +2,13 @@
  * Environment configuration tests.
  *
  * Verifies that the Zod-based env schema rejects invalid inputs.
- * These are pure schema-validation tests — they do not import the
+ * These are pure schema-validation tests - they do not import the
  * config module (which calls process.exit on failure).
  */
 
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
 
-// Re-create the env schema shape from config/env.ts for testing.
-// This avoids importing the module that calls process.exit(1).
 const envSchema = z
   .object({
     NODE_ENV: z
@@ -29,6 +27,7 @@ const envSchema = z
     EMAIL_DELIVERY_ENDPOINT: z.string().url().optional(),
     EMAIL_DELIVERY_TOKEN: z.string().min(16).optional(),
     EMAIL_FROM: z.string().min(3).optional(),
+    MEDIA_VIEW_HMAC_SECRET: z.string().min(32).optional(),
     CLOUDINARY_CLOUD_NAME: z.string().min(1),
     CLOUDINARY_API_KEY: z.string().min(1),
     CLOUDINARY_API_SECRET: z.string().min(1),
@@ -44,6 +43,49 @@ const envSchema = z
         path: ["EMAIL_DELIVERY_MODE"],
         message: "Production password recovery requires HTTP email delivery",
       });
+    }
+
+    if (value.NODE_ENV === "production" && !value.MEDIA_VIEW_HMAC_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MEDIA_VIEW_HMAC_SECRET"],
+        message: "Production view deduplication requires MEDIA_VIEW_HMAC_SECRET",
+      });
+    }
+
+    if (value.NODE_ENV === "production") {
+      const frontendUrl = new URL(value.FRONTEND_URL);
+      if (frontendUrl.protocol !== "https:") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["FRONTEND_URL"],
+          message: "Production FRONTEND_URL must use HTTPS",
+        });
+      }
+
+      if (["localhost", "127.0.0.1", "::1"].includes(frontendUrl.hostname)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["FRONTEND_URL"],
+          message: "Production FRONTEND_URL cannot point to localhost",
+        });
+      }
+
+      if (value.STRIPE_SECRET_KEY.startsWith("sk_test_")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_SECRET_KEY"],
+          message: "Production Stripe secret key must not use test mode",
+        });
+      }
+
+      if (value.STRIPE_WEBHOOK_SECRET.includes("placeholder")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_WEBHOOK_SECRET"],
+          message: "Production Stripe webhook secret cannot be a placeholder",
+        });
+      }
     }
 
     if (
@@ -72,6 +114,19 @@ describe("env schema validation", () => {
     CLOUDINARY_CLOUD_NAME: "test",
     CLOUDINARY_API_KEY: "123456789",
     CLOUDINARY_API_SECRET: "test_cloudinary_secret",
+  };
+
+  const validProductionEnv = {
+    ...validEnv,
+    NODE_ENV: "production",
+    FRONTEND_URL: "https://cinetube.example.com",
+    STRIPE_SECRET_KEY: "sk_live_placeholder",
+    STRIPE_WEBHOOK_SECRET: "whsec_live_secret",
+    EMAIL_DELIVERY_MODE: "http",
+    EMAIL_DELIVERY_ENDPOINT: "https://mail.example.com/send",
+    EMAIL_DELIVERY_TOKEN: "mail-token-at-least-sixteen-chars",
+    EMAIL_FROM: "CineTube <noreply@example.com>",
+    MEDIA_VIEW_HMAC_SECRET: "view-dedup-secret-at-least-thirty-two",
   };
 
   it("accepts valid environment", () => {
@@ -106,23 +161,26 @@ describe("env schema validation", () => {
 
   it("requires an HTTP mail adapter in production", () => {
     const result = envSchema.safeParse({
-      ...validEnv,
-      NODE_ENV: "production",
+      ...validProductionEnv,
+      EMAIL_DELIVERY_MODE: "disabled",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects localhost frontend and test Stripe keys in production", () => {
+    const result = envSchema.safeParse({
+      ...validProductionEnv,
+      FRONTEND_URL: "http://localhost:3000",
+      STRIPE_SECRET_KEY: "sk_test_placeholder",
+      STRIPE_WEBHOOK_SECRET: "whsec_placeholder",
     });
 
     expect(result.success).toBe(false);
   });
 
   it("accepts production with HTTP mail delivery configured", () => {
-    const result = envSchema.safeParse({
-      ...validEnv,
-      NODE_ENV: "production",
-      EMAIL_DELIVERY_MODE: "http",
-      EMAIL_DELIVERY_ENDPOINT: "https://mail.example.com/send",
-      EMAIL_DELIVERY_TOKEN: "mail-token-at-least-sixteen-chars",
-      EMAIL_FROM: "CineTube <noreply@example.com>",
-    });
-
+    const result = envSchema.safeParse(validProductionEnv);
     expect(result.success).toBe(true);
   });
 });

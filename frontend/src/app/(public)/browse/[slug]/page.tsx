@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -264,16 +265,22 @@ export default function MediaDetailPage({
       <section className="relative isolate">
         <div className="absolute inset-0 h-[78vh] min-h-[520px] overflow-hidden">
           {media.backdropUrl ? (
-            <img
+            <Image
               src={media.backdropUrl}
               alt=""
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
             />
           ) : media.posterUrl ? (
-            <img
+            <Image
               src={media.posterUrl}
               alt=""
-              className="w-full h-full object-cover blur-2xl scale-110 opacity-40"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover blur-2xl scale-110 opacity-40"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-950" />
@@ -300,10 +307,13 @@ export default function MediaDetailPage({
               className="relative w-[180px] md:w-[260px] aspect-[2/3] shrink-0 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl shadow-black/70"
             >
               {media.posterUrl ? (
-                <img
+                <Image
                   src={media.posterUrl}
                   alt={media.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 260px, 180px"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-zinc-900">
@@ -488,7 +498,10 @@ export default function MediaDetailPage({
 
               {isAuthenticated && !myReview && (
                 <div className="rounded-2xl border border-zinc-900 bg-zinc-900/30 p-6">
-                  <ReviewForm mediaId={media.id} onSuccess={invalidateMyReview} />
+                  <ReviewForm
+                    mediaId={media.id}
+                    onSuccess={invalidateMyReview}
+                  />
                 </div>
               )}
 
@@ -568,13 +581,93 @@ export default function MediaDetailPage({
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-zinc-500">Views</dt>
-                  <dd className="text-zinc-200 font-medium">{media.viewCount}</dd>
+                  <dd className="text-zinc-200 font-medium">
+                    {media.viewCount}
+                  </dd>
                 </div>
               </dl>
             </div>
           </aside>
         </div>
+
+        {/* Related Media */}
+        <RelatedMedia slug={slug} />
       </div>
     </main>
+  );
+}
+
+// ── Related Media Section ─────────────────────────────────
+
+function RelatedMedia({ slug }: { slug: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["media", "related", slug],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        ApiResponse<{ items: MediaSummary[] }>
+      >(`/media/${slug}/related`);
+      return data.data.items;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <section className="mt-16">
+        <h2 className="text-xl font-bold tracking-tight text-white mb-6">
+          You May Also Like
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-[2/3] rounded-xl bg-zinc-900 animate-pulse"
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <section className="mt-16">
+      <h2 className="text-xl font-bold tracking-tight text-white mb-6">
+        You May Also Like
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {data.map((item) => (
+          <Link key={item.id} href={`/browse/${item.slug}`} className="group">
+            <div className="aspect-[2/3] rounded-xl overflow-hidden bg-zinc-900 relative">
+              {item.posterUrl ? (
+                <Image
+                  src={item.posterUrl}
+                  alt={item.title}
+                  fill
+                  sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl">
+                  🎬
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-white text-xs font-medium line-clamp-2">
+                  {item.title}
+                </p>
+                <p className="text-amber-400 text-xs">
+                  ⭐ {item.averageRating || "N/A"}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-zinc-400 line-clamp-1">
+              {item.title}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

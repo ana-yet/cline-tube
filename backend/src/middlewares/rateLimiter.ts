@@ -8,12 +8,15 @@ export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 10_000 : 500,
   skip: () => isDev,
-  message: {
-    success: false,
-    error: {
-      message: "Too many requests. Please try again later.",
-      code: "RATE_LIMIT_EXCEEDED",
-    },
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      requestId: req.requestId,
+      error: {
+        message: "Too many requests. Please try again later.",
+        code: "RATE_LIMIT_EXCEEDED",
+      },
+    });
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -22,12 +25,15 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 100 : 10,
-  message: {
-    success: false,
-    error: {
-      message: "Too many authentication attempts. Please try again later.",
-      code: "AUTH_RATE_LIMIT_EXCEEDED",
-    },
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      requestId: req.requestId,
+      error: {
+        message: "Too many authentication attempts. Please try again later.",
+        code: "AUTH_RATE_LIMIT_EXCEEDED",
+      },
+    });
   },
   standardHeaders: true,
   legacyHeaders: false,

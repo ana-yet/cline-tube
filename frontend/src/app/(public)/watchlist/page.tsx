@@ -7,7 +7,7 @@ import type { ApiResponse, MediaSummary } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Film, Star, ArrowRight, Heart } from "lucide-react";
+import { Trash2, Star, ArrowRight, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function WatchlistPage() {

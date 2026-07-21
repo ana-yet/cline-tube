@@ -12,7 +12,7 @@ import type { ApiResponse, MediaSummary, Media } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/accordion";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  type LucideIcon,
   Play,
   Info,
   Star,
@@ -34,12 +35,9 @@ import {
   Grid,
   Sparkles,
   Clock,
-  Plus,
   Eye,
-  Film,
   TrendingUp,
-  SlidersHorizontal,
-  Bookmark
+  Bookmark,
 } from "lucide-react";
 
 // Premium Curated Carousel Items
@@ -850,7 +848,7 @@ interface MediaRowProps {
   title: string;
   queryKey: string;
   params: Record<string, string | number>;
-  icon: any;
+  icon: LucideIcon;
   onCardClick: (media: MediaSummary) => void;
 }
 

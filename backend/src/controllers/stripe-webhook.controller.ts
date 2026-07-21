@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as paymentService from "../services/payment.service";
+import { logger } from "../utils/logger";
 
 // Receives Stripe webhook events; the raw body is required for signature checks.
 export async function handleWebhook(
@@ -11,6 +12,7 @@ export async function handleWebhook(
   if (!signature) {
     res.status(400).json({
       success: false,
+      requestId: req.requestId,
       error: {
         message: "Missing stripe-signature header",
         code: "MISSING_SIGNATURE",
@@ -29,25 +31,27 @@ export async function handleWebhook(
   } catch {
     res.status(400).json({
       success: false,
+      requestId: req.requestId,
       error: { message: "Invalid webhook signature", code: "WEBHOOK_ERROR" },
     });
     return;
   }
 
   try {
-    console.log("Stripe webhook received", { type: event.type });
+    logger.info("Stripe webhook received", { type: event.type });
 
     await paymentService.handleWebhookEvent(event);
 
-    res.json({ received: true });
+    res.json({ success: true, requestId: req.requestId, data: { received: true } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Webhook error";
-    console.error("Stripe webhook processing failed", {
+    logger.error("Stripe webhook processing failed", {
       type: event.type,
       message,
     });
     res.status(500).json({
       success: false,
+      requestId: req.requestId,
       error: { message: "Webhook processing failed", code: "WEBHOOK_ERROR" },
     });
   }
