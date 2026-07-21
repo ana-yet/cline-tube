@@ -23,10 +23,12 @@ const envSchema = z
     .min(1, { message: "STRIPE_WEBHOOK_SECRET is required" }),
   FRONTEND_URL: z.string().url({ message: "FRONTEND_URL must be a valid URL" }),
   FRONTEND_ORIGINS: z.string().optional(),
-  EMAIL_DELIVERY_MODE: z.enum(["capture", "http", "disabled"]).optional(),
+  EMAIL_DELIVERY_MODE: z.enum(["capture", "http", "smtp", "disabled"]).optional(),
   EMAIL_DELIVERY_ENDPOINT: z.string().url().optional(),
   EMAIL_DELIVERY_TOKEN: z.string().min(16).optional(),
   EMAIL_FROM: z.string().min(3).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
   MEDIA_VIEW_HMAC_SECRET: z.string().min(32).optional(),
   PORT: z.coerce.number().int().positive().default(5000),
   NODE_ENV: z
@@ -101,6 +103,23 @@ const envSchema = z
           code: z.ZodIssueCode.custom,
           path: ["EMAIL_DELIVERY_TOKEN"],
           message: "EMAIL_DELIVERY_TOKEN is required for HTTP email delivery",
+        });
+      }
+    }
+
+    if (emailMode === "smtp") {
+      if (!value.SMTP_USER) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["SMTP_USER"],
+          message: "SMTP_USER is required for SMTP email delivery (use your Gmail address)",
+        });
+      }
+      if (!value.SMTP_PASS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["SMTP_PASS"],
+          message: "SMTP_PASS is required for SMTP email delivery (use a Gmail App Password)",
         });
       }
     }
