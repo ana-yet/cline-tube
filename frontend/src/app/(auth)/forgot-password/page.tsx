@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Film, ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
@@ -63,43 +63,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* Left Column: Visual Brand / Movie Backdrop */}
-      <div className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden bg-zinc-950 text-white">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{ backgroundImage: "url('/cinema_auth_bg.png')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/80 to-red-950/40" />
-
-        <div className="relative z-10">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors"
-          >
-            <Film className="h-6 w-6 fill-red-500" />
-            <span>CineTube</span>
-          </Link>
-        </div>
-
-        <div className="relative z-10 space-y-4 max-w-lg">
-          <h2 className="text-4xl font-extrabold tracking-tight leading-tight">
-            Lost your way in the Cineverse?
-          </h2>
-          <p className="text-zinc-300 text-lg">
-            No worries. Enter your email address and we&apos;ll send you a ticket to
-            get back in.
-          </p>
-        </div>
-
-        <div className="relative z-10 text-sm text-zinc-500">
-          &copy; {new Date().getFullYear()} CineTube. All rights reserved.
-        </div>
-      </div>
-
-      {/* Right Column: Form */}
-      <div className="flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20 relative bg-zinc-950">
-        <div className="mx-auto w-full max-w-sm space-y-6">
+    <div className="mx-auto w-full max-w-sm space-y-6">
           <div className="space-y-2 text-left">
             <Link
               href="/login"
@@ -179,8 +143,6 @@ export default function ForgotPasswordPage() {
               </Button>
             </form>
           )}
-        </div>
-      </div>
-    </main>
+    </div>
   );
 }

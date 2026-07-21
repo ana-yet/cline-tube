@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Film, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
@@ -64,39 +64,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* Left Column: Visual Brand / Movie Backdrop */}
-      <div className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden bg-zinc-950 text-white">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{ backgroundImage: "url('/cinema_auth_bg.png')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/80 to-red-950/40" />
-
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors">
-            <Film className="h-6 w-6 fill-red-500" />
-            <span>CineTube</span>
-          </Link>
-        </div>
-
-        <div className="relative z-10 space-y-4 max-w-lg">
-          <h2 className="text-4xl font-extrabold tracking-tight leading-tight">
-            Create Your CinePass
-          </h2>
-          <p className="text-zinc-300 text-lg">
-            Create an account to build custom watchlists, rate your favorite media, write reviews, and receive recommendations based on your tastes.
-          </p>
-        </div>
-
-        <div className="relative z-10 text-sm text-zinc-500">
-          &copy; {new Date().getFullYear()} CineTube. All rights reserved.
-        </div>
-      </div>
-
-      {/* Right Column: Form */}
-      <div className="flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20 relative bg-zinc-950">
-        <div className="mx-auto w-full max-w-sm space-y-6">
+    <div className="mx-auto w-full max-w-sm space-y-6">
           <div className="space-y-2 text-left">
             <h1 className="text-3xl font-bold tracking-tight text-white">Get Started</h1>
             <p className="text-muted-foreground text-sm">
@@ -218,8 +186,6 @@ export default function RegisterPage() {
               Sign in
             </Link>
           </p>
-        </div>
-      </div>
-    </main>
+    </div>
   );
 }
