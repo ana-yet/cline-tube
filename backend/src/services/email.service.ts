@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { env } from "../config/env";
 import { ApiError } from "../utils/errors";
 
@@ -17,6 +18,22 @@ export function getCapturedEmails(): CapturedEmail[] {
 
 export function clearCapturedEmails(): void {
   capturedEmails.length = 0;
+}
+
+/** Lazy SMTP transport — created once on first use. */
+let smtpTransport: nodemailer.Transporter | null = null;
+
+function getSmtpTransport(): nodemailer.Transporter {
+  if (!smtpTransport) {
+    smtpTransport = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
+      },
+    });
+  }
+  return smtpTransport;
 }
 
 interface PasswordResetEmailInput {
@@ -54,6 +71,19 @@ export async function sendPasswordResetEmail({
     return;
   }
 
+  if (env.EMAIL_DELIVERY_MODE === "smtp") {
+    const transport = getSmtpTransport();
+    await transport.sendMail({
+      from: env.EMAIL_FROM || env.SMTP_USER,
+      to,
+      subject,
+      text,
+      html,
+    });
+    return;
+  }
+
+  // Default: http mode
   const response = await fetch(env.EMAIL_DELIVERY_ENDPOINT!, {
     method: "POST",
     headers: {
